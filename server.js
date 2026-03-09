@@ -8,6 +8,7 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname)); // Serve frontend static files
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
