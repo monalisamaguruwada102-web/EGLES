@@ -521,6 +521,13 @@ app.delete('/api/bulk/:table', async (req, res) => {
     }
 });
 
+app.get('/api/config', (req, res) => {
+    res.json({
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabaseKey: process.env.SUPABASE_KEY
+    });
+});
+
 app.listen(port, () => {
     console.log(`Egles SMIS server running on port ${port}`);
 });

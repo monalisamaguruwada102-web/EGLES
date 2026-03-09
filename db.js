@@ -1,4 +1,21 @@
 const API_URL = '/api';
+let supabase = null;
+
+// Initialize Supabase from backend config
+async function initSupabase() {
+    try {
+        const res = await fetch(`${API_URL}/config`);
+        const config = await res.json();
+        if (config.supabaseUrl && config.supabaseKey) {
+            supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
+            console.log('☁️ Frontend Supabase initialized');
+        }
+    } catch (err) {
+        console.warn('⚠️ Supabase frontend initialization failed:', err.message);
+    }
+}
+
+initSupabase();
 
 class QueryBuilder {
     constructor(tableName, key = null) {
@@ -22,7 +39,6 @@ class QueryBuilder {
         if (typeof condition === 'function') {
             this.filterFunc = condition;
         } else {
-            // Not strictly used, but good to have
             Object.assign(this.conditions, condition);
         }
         return this;
@@ -39,7 +55,30 @@ class QueryBuilder {
     }
 
     async toArray() {
-        // Construct query string
+        // Cloud-First: Supabase
+        if (supabase) {
+            try {
+                let query = supabase.from(this.tableName).select('*');
+                for (const [key, value] of Object.entries(this.conditions)) {
+                    query = query.eq(key, value);
+                }
+                if (this.isReverse) {
+                    query = query.order('id', { ascending: false });
+                }
+                if (this.limitCount) {
+                    query = query.limit(this.limitCount);
+                }
+                const { data, error } = await query;
+                if (!error && data) {
+                    return this.filterFunc ? data.filter(this.filterFunc) : data;
+                }
+                console.error(`Supabase query failed for ${this.tableName}:`, error);
+            } catch (err) {
+                console.warn(`Supabase fallback for ${this.tableName}:`, err.message);
+            }
+        }
+
+        // Local Fallback: Express API
         const params = { ...this.conditions };
         if (this.isReverse) {
             params._sort = 'id';
@@ -49,8 +88,8 @@ class QueryBuilder {
             params._limit = this.limitCount;
         }
 
-        const query = new URLSearchParams(params).toString();
-        const res = await fetch(`${API_URL}/${this.tableName}?${query}`);
+        const queryStr = new URLSearchParams(params).toString();
+        const res = await fetch(`${API_URL}/${this.tableName}?${queryStr}`);
         let data = await res.json();
 
         if (this.filterFunc) {
@@ -72,21 +111,19 @@ class QueryBuilder {
     }
 
     async modify(changes) {
-        const query = new URLSearchParams(this.conditions).toString();
-        const res = await fetch(`${API_URL}/bulk/${this.tableName}?${query}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(changes)
-        });
-        return res.json();
+        const results = await this.toArray();
+        for (const item of results) {
+            await db[this.tableName].update(item.id, changes);
+        }
+        return { updated: results.length };
     }
 
     async delete() {
-        const query = new URLSearchParams(this.conditions).toString();
-        const res = await fetch(`${API_URL}/bulk/${this.tableName}?${query}`, {
-            method: 'DELETE'
-        });
-        return res.json();
+        const results = await this.toArray();
+        for (const item of results) {
+            await db[this.tableName].delete(item.id);
+        }
+        return { deleted: results.length };
     }
 }
 
@@ -100,36 +137,58 @@ class TableProxy {
     }
 
     async toArray() {
-        const res = await fetch(`${API_URL}/${this.tableName}`);
-        return await res.json();
+        return new QueryBuilder(this.tableName).toArray();
     }
 
     async get(id) {
+        // Cloud-First
+        if (supabase) {
+            try {
+                const { data, error } = await supabase.from(this.tableName).select('*').eq('id', id).single();
+                if (!error && data) return data;
+            } catch (err) { }
+        }
         const res = await fetch(`${API_URL}/${this.tableName}/${id}`);
         if (!res.ok) return undefined;
         return await res.json();
     }
 
     async add(data) {
+        // Double Write: Supabase + Local API
+        let cloudResult = null;
+        if (supabase) {
+            try {
+                const { data: inserted, error } = await supabase.from(this.tableName).insert(data).select().single();
+                if (!error) cloudResult = inserted;
+            } catch (err) {
+                console.error('Supabase add failed:', err);
+            }
+        }
+
         const res = await fetch(`${API_URL}/${this.tableName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        return await res.json();
+        const localResult = await res.json();
+        return cloudResult || localResult;
     }
 
     async put(data) {
-        if (data.id) {
-            const res = await fetch(`${API_URL}/${this.tableName}/${data.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            return await res.json();
-        } else {
-            return this.add(data);
+        if (!data.id) return this.add(data);
+
+        if (supabase) {
+            try {
+                await supabase.from(this.tableName).upsert(data);
+            } catch (err) { }
         }
+
+        const res = await fetch(`${API_URL}/${this.tableName}/${data.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return await res.json();
     }
 
     async update(id, changes) {
@@ -139,13 +198,17 @@ class TableProxy {
     }
 
     async delete(id) {
+        if (supabase) {
+            try {
+                await supabase.from(this.tableName).delete().eq('id', id);
+            } catch (err) { }
+        }
         await fetch(`${API_URL}/${this.tableName}/${id}`, { method: 'DELETE' });
     }
 
     async count() {
-        const res = await fetch(`${API_URL}/${this.tableName}`);
-        const data = await res.json();
-        return data.length;
+        const results = await this.toArray();
+        return results.length;
     }
 
     reverse() {
@@ -182,4 +245,4 @@ const db = {
     publicTestimonials: new TableProxy('public_testimonials')
 };
 
-console.log("PostgreSQL/Express Compat DB initialized");
+console.log("Premium Hybrid Cloud-Sync DB initialized");
