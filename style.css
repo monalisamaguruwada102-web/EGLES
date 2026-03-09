@@ -1163,6 +1163,59 @@ tr:hover td {
         height: 34px;
         font-size: 0.9rem;
     }
+
+    /* V5: ENFORCE MOBILE STACKING FOR FORMS AND HEADERS */
+    .admin-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .admin-header>div,
+    .admin-header .button-group {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 0.75rem !important;
+    }
+
+    .admin-header button {
+        width: 100% !important;
+        margin: 0 !important;
+        flex: none !important;
+    }
+
+    #tt-form,
+    #lib-form,
+    #loan-form,
+    #disc-form,
+    #health-form,
+    #pay-form,
+    #pos-form,
+    #exp-form,
+    #subj-form,
+    #reg-form,
+    #staff-form,
+    #asset-form,
+    #fees-form,
+    #marks-form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #tt-form input,
+    #tt-form select,
+    .glass-panel form input,
+    .glass-panel form select {
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    .glass-panel table {
+        min-width: 600px !important;
+    }
 }
 
 /* =============================================
