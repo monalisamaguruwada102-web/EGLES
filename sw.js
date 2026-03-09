@@ -1,10 +1,10 @@
-const CACHE_NAME = 'egles-smis-v-supabase';
+const CACHE_NAME = 'egles-smis-v-final-sync';
 const urlsToCache = [
     '/',
     '/index.html',
-    '/style.css?v=supabase',
-    '/app_v1.js?v=supabase',
-    '/db.js?v=supabase',
+    '/style.css?v=final-sync',
+    '/app_v1.js?v=final-sync',
+    '/db.js?v=final-sync',
     '/manifest.json',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
