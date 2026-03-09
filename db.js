@@ -176,6 +176,10 @@ const db = {
     transportAssignments: new TableProxy('transportAssignments'),
     notifications: new TableProxy('notifications'),
     users: new TableProxy('users'),
+    publicSettings: new TableProxy('public_settings'),
+    publicAchievements: new TableProxy('public_achievements'),
+    publicCurriculum: new TableProxy('public_curriculum'),
+    publicTestimonials: new TableProxy('public_testimonials')
 };
 
 console.log("PostgreSQL/Express Compat DB initialized");

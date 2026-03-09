@@ -90,68 +90,16 @@ const app = {
                 <div style="max-width:1200px; margin:0 auto; padding:3rem 2rem;">
                     
                     <!-- PREMIUM: Live Event & Admissions Countdown -->
-                    <div class="premium-countdown" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); border-radius: 20px; padding: 2.5rem; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; margin-bottom: 4rem; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.25);">
-                        <div class="countdown-text">
-                            <div style="text-transform: uppercase; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 0.75rem; color: rgba(255,255,255,0.8);">Next Major Event</div>
-                            <h2 style="font-size: 2.2rem; margin: 0; font-weight: 800; line-height: 1.2;">Term 2 Admissions Open</h2>
-                        </div>
-                        <div class="countdown-numbers" style="display: flex; gap: 1rem; text-align: center; flex-wrap: wrap; justify-content: center;">
-                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
-                                <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">14</div>
-                                <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Days</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
-                                <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">08</div>
-                                <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Hrs</div>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
-                                <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">45</div>
-                                <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Mins</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="pub-countdown-container"></div>
 
                     <!-- PREMIUM: Hall of Fame -->
                     <div style="margin-bottom: 5rem;">
                         <h2 style="font-size: 2.2rem; margin-bottom: 2.5rem; text-align: center;">🏆 Wall of Excellence</h2>
-                        <div class="excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-                            <!-- Academics -->
-                            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='var(--warning)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
-                                <div>
-                                    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-                                        <div style="font-size: 2.5rem; background: rgba(245, 158, 11, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">🥇</div>
-                                        <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">Academics</span>
-                                    </div>
-                                    <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">Sarah Jenkins</h3>
-                                    <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">National Science Olympiad Winner 2025. Perfect score in Advanced Physics.</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Sports -->
-                            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='var(--success)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
-                                <div>
-                                    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-                                        <div style="font-size: 2.5rem; background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">⚽</div>
-                                        <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">Sports</span>
-                                    </div>
-                                    <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">Senior Boys Football</h3>
-                                    <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">Regional Champions for three consecutive years (2023-2025).</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Arts -->
-                            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='var(--secondary)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
-                                <div>
-                                    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-                                        <div style="font-size: 2.5rem; background: rgba(236, 72, 153, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">🎭</div>
-                                        <span style="background: rgba(236, 72, 153, 0.1); color: var(--secondary); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">Arts</span>
-                                    </div>
-                                    <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">Drama Club</h3>
-                                    <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">Awarded "Best Ensemble" at the National Schools Theatre Festival.</p>
-                                </div>
-                            </div>
+                        <div id="pub-excellence-grid" class="excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
+
 
                     <!-- PREMIUM: Immersive Interactive Campus Map -->
                     <div style="margin-bottom: 4rem;">
@@ -248,104 +196,19 @@ const app = {
                     <!-- PREMIUM: Visual Curriculum Explorer -->
                     <div style="margin-top: 5rem; margin-bottom: 5rem;">
                         <h2 style="font-size: 2.2rem; margin-bottom: 2rem; text-align: center;">🔬 Academic Pathways</h2>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-                            
-                            <!-- STEM -->
-                            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.15) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
-                                <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">🧬</div>
-                                <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--success);"><span style="font-size: 1.8rem;">🧪</span> STEM</h3>
-                                <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">Science, Technology, Engineering & Math</p>
-                                
-                                <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 0;">
-                                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                                        <li>✓ Advanced Physics Lab</li>
-                                        <li>✓ Robotics & AI Club</li>
-                                        <li>✓ AP Calculus & Statistics</li>
-                                        <li>✓ Environmental Science</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <!-- Humanities -->
-                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0.15) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
-                                <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">🏛️</div>
-                                <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);"><span style="font-size: 1.8rem;">📚</span> Humanities</h3>
-                                <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">Languages, History & Social Sciences</p>
-                                
-                                <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid rgba(99, 102, 241, 0.2); padding-top: 0;">
-                                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                                        <li>✓ World Literature</li>
-                                        <li>✓ Modern European History</li>
-                                        <li>✓ Psychology & Sociology</li>
-                                        <li>✓ Model UN Debate Team</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <!-- Creative Arts -->
-                            <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(236, 72, 153, 0.15) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
-                                <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">🎨</div>
-                                <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--secondary);"><span style="font-size: 1.8rem;">🎭</span> Creative Arts</h3>
-                                <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">Fine Arts, Music & Performance</p>
-                                
-                                <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid rgba(236, 72, 153, 0.2); padding-top: 0;">
-                                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                                        <li>✓ Digital Graphic Design</li>
-                                        <li>✓ Classical & Jazz Orchestra</li>
-                                        <li>✓ Theatre Production</li>
-                                        <li>✓ 3D Sculpting Studio</li>
-                                    </ul>
-                                </div>
-                            </div>
-
+                        <div id="pub-curriculum-explorer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
 
-                    <!-- PREMIUM: Dynamic Transport & Weather -->
-                    <div style="margin-bottom: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;" class="mobile-stack">
-                        <div class="glass-panel" style="margin: 0; display: flex; align-items: center; justify-content: space-between; padding: 2rem;">
-                            <div>
-                                <h3 style="margin: 0 0 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Local Campus Weather</h3>
-                                <div style="font-size: 2.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
-                                    ☀️ 24°C
-                                </div>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--primary);">Perfect weather for outdoor sports!</p>
-                            </div>
-                            <div style="font-size: 4rem; opacity: 0.2;">🌤️</div>
-                        </div>
-
-                        <div class="glass-panel" style="margin: 0; display: flex; align-items: center; justify-content: space-between; padding: 2rem;">
-                            <div>
-                                <h3 style="margin: 0 0 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Transport Status</h3>
-                                <div style="font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; color: var(--success);">
-                                    🚌 All Routes On Time
-                                </div>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-muted);">Next dispatch: 15:30 PM</p>
-                            </div>
-                            <div style="font-size: 4rem; opacity: 0.2;">🚍</div>
-                        </div>
+                    <div style="margin-bottom: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;" class="mobile-stack" id="pub-weather-transport">
+                        <!-- Populated dynamically -->
                     </div>
 
                 </div>
 
                 <!-- PREMIUM: Alumni Parallax Section -->
-                <div style="position: relative; padding: 6rem 2rem; overflow: hidden; background: #0f172a; color: white;">
-                    <!-- CSS Parallax Background Trick -->
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 200%; background: radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 0%, #0f172a 70%); transform: translateY(-25%); z-index: 0; opacity: 0.5; pointer-events: none;"></div>
-                    
-                    <div style="max-width: 1000px; margin: 0 auto; position: relative; z-index: 10; text-align: center;">
-                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🎓</span>
-                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; font-weight: 800;">Forging Global Leaders</h2>
-                        
-                        <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 3rem; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-                            <p style="font-size: 1.4rem; font-style: italic; line-height: 1.6; margin-bottom: 2rem;">"The foundation I received here didn't just teach me how to pass exams; it taught me how to think critically, innovate, and lead with empathy. It was the launchpad for my career in AI research."</p>
-                            <div>
-                                <h4 style="margin: 0; font-size: 1.2rem; font-weight: 700;">Dr. Alistair Chen</h4>
-                                <p style="color: var(--primary-bright); margin: 0.5rem 0 0 0; font-size: 0.95rem; font-weight: 600;">Class of 2014 &bull; Senior Lead Engineer, Quantum Compute</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="pub-testimonial-container"></div>
 
             </div>
 
@@ -377,13 +240,133 @@ const app = {
     },
 
     async _loadPublicData() {
-        const [students, staff, subjects, notices, timetable] = await Promise.all([
+        const [students, staff, subjects, notices, timetable, settings, achievements, curriculum, testimonials] = await Promise.all([
             db.students.toArray(),
             db.staff.toArray(),
             db.subjects.toArray(),
             db.notices.toArray(),
-            db.timetable.toArray()
+            db.timetable.toArray(),
+            db.publicSettings.toArray(),
+            db.publicAchievements.toArray(),
+            db.publicCurriculum.toArray(),
+            db.publicTestimonials.toArray()
         ]);
+
+        const settingsMap = {};
+        settings.forEach(s => settingsMap[s.key] = s.value);
+
+        // 1. Live Countdown
+        const countdownContainer = document.getElementById('pub-countdown-container');
+        if (countdownContainer && settingsMap.countdown_date) {
+            countdownContainer.innerHTML = `
+                <div class="premium-countdown" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); border-radius: 20px; padding: 2.5rem; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; margin-bottom: 4rem; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.25);">
+                    <div class="countdown-text">
+                        <div style="text-transform: uppercase; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 0.75rem; color: rgba(255,255,255,0.8);">Next Major Event</div>
+                        <h2 style="font-size: 2.2rem; margin: 0; font-weight: 800; line-height: 1.2;">${settingsMap.countdown_title || 'Upcoming Event'}</h2>
+                    </div>
+                    <div class="countdown-numbers" style="display: flex; gap: 1rem; text-align: center; flex-wrap: wrap; justify-content: center;" id="live-timer">
+                        <!-- Handled by startCountdown -->
+                    </div>
+                </div>
+            `;
+            this.startCountdown(settingsMap.countdown_date);
+        }
+
+        // 2. Wall of Excellence
+        const excellenceGrid = document.getElementById('pub-excellence-grid');
+        if (excellenceGrid) {
+            excellenceGrid.innerHTML = achievements.map((a, i) => {
+                const color = i % 3 === 0 ? 'var(--warning)' : i % 3 === 1 ? 'var(--success)' : 'var(--secondary)';
+                const bg = i % 3 === 0 ? 'rgba(245, 158, 11, 0.1)' : i % 3 === 1 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(236, 72, 153, 0.1)';
+                return `
+                <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='${color}'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                            <div style="font-size: 2.5rem; background: ${bg}; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">${a.icon}</div>
+                            <span style="background: ${bg}; color: ${color}; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">${a.category}</span>
+                        </div>
+                        <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">${a.title}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">${a.content}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // 3. Curriculum Explorer
+        const curriculumGrid = document.getElementById('pub-curriculum-explorer');
+        if (curriculumGrid) {
+            curriculumGrid.innerHTML = curriculum.map((c, i) => {
+                const colors = [
+                    { main: 'rgba(16, 185, 129, 0.05)', highlight: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.2)', text: 'var(--success)' },
+                    { main: 'rgba(99, 102, 241, 0.05)', highlight: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.2)', text: 'var(--primary)' },
+                    { main: 'rgba(236, 72, 153, 0.05)', highlight: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.2)', text: 'var(--secondary)' }
+                ][i % 3];
+                return `
+                <div style="background: linear-gradient(135deg, ${colors.main} 0%, ${colors.highlight} 100%); border: 1px solid ${colors.border}; border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
+                    <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">${c.icon}</div>
+                    <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: ${colors.text};"><span style="font-size: 1.8rem;">${c.icon}</span> ${c.category}</h3>
+                    <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">${c.description}</p>
+                    
+                    <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid ${colors.border}; padding-top: 0;">
+                        <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                            ${c.details.split(',').map(d => `<li>✓ ${d.trim()}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // 4. Weather & Transport
+        const wtContainer = document.getElementById('pub-weather-transport');
+        if (wtContainer) {
+            wtContainer.innerHTML = `
+                <div class="glass-panel" style="margin: 0; display: flex; align-items: center; justify-content: space-between; padding: 2rem;">
+                    <div>
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Local Campus Weather</h3>
+                        <div style="font-size: 2.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+                            ${settingsMap.weather_mock || '☀️ 24°C'}
+                        </div>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--primary);">Perfect weather for outdoor sports!</p>
+                    </div>
+                    <div style="font-size: 4rem; opacity: 0.2;">🌤️</div>
+                </div>
+
+                <div class="glass-panel" style="margin: 0; display: flex; align-items: center; justify-content: space-between; padding: 2rem;">
+                    <div>
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Transport Status</h3>
+                        <div style="font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; color: var(--success);">
+                            ${settingsMap.transport_status || '🚌 All Routes On Time'}
+                        </div>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-muted);">Next dispatch: 15:30 PM</p>
+                    </div>
+                    <div style="font-size: 4rem; opacity: 0.2;">🚍</div>
+                </div>
+            `;
+        }
+
+        // 5. Testimonial
+        const testContainer = document.getElementById('pub-testimonial-container');
+        if (testContainer && testimonials.length > 0) {
+            const t = testimonials[0]; // Just take first for now
+            testContainer.innerHTML = `
+                <div style="position: relative; padding: 6rem 2rem; overflow: hidden; background: #0f172a; color: white;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 200%; background: radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 0%, #0f172a 70%); transform: translateY(-25%); z-index: 0; opacity: 0.5; pointer-events: none;"></div>
+                    
+                    <div style="max-width: 1000px; margin: 0 auto; position: relative; z-index: 10; text-align: center;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">${t.emoji}</span>
+                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; font-weight: 800;">Forging Global Leaders</h2>
+                        
+                        <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 3rem; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                            <p style="font-size: 1.4rem; font-style: italic; line-height: 1.6; margin-bottom: 2rem;">"${t.quote}"</p>
+                            <div>
+                                <h4 style="margin: 0; font-size: 1.2rem; font-weight: 700;">${t.name}</h4>
+                                <p style="color: var(--primary-bright); margin: 0.5rem 0 0 0; font-size: 0.95rem; font-weight: 600;">${t.role}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         // Counter animation logic
         const animateValue = (id, start, end, duration) => {
@@ -2748,12 +2731,51 @@ const app = {
         this.container.innerHTML = statsContent;
     },
 
+    startCountdown(targetDate) {
+        const target = new Date(targetDate).getTime();
+        const el = document.getElementById('live-timer');
+        if (!el) return;
+
+        const update = () => {
+            const now = new Date().getTime();
+            const diff = target - now;
+
+            if (diff <= 0) {
+                el.innerHTML = '<div style="font-size: 1.5rem; font-weight: 800;">EVENT IN PROGRESS</div>';
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            el.innerHTML = `
+                <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+                    <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">${days < 10 ? '0' + days : days}</div>
+                    <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Days</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+                    <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">${hours < 10 ? '0' + hours : hours}</div>
+                    <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Hrs</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+                    <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">${mins < 10 ? '0' + mins : mins}</div>
+                    <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Mins</div>
+                </div>
+            `;
+        };
+
+        update();
+        setInterval(update, 60000);
+    },
+
     calculateGrade(score) {
+        if (score >= 90) return 'A+';
         if (score >= 80) return 'A';
         if (score >= 70) return 'B';
         if (score >= 60) return 'C';
         if (score >= 50) return 'D';
-        return 'U';
+        return 'F';
     },
 
     async renderNotices() {
