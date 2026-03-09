@@ -1,223 +1,345 @@
 require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
+const Database = require('better-sqlite3');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // Serve frontend static files
+app.use(express.static(__dirname)); // Serve frontend files
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
+// Initialize SQLite database
+const db = new Database(path.join(__dirname, 'egles.db'));
 
-// Generic GET with optional query filters
-app.get('/api/:table', async (req, res) => {
+// Auto-create all tables on startup
+db.exec(`
+CREATE TABLE IF NOT EXISTS "students" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT UNIQUE,
+    name TEXT,
+    class TEXT,
+    gender TEXT,
+    parentContact TEXT
+);
+CREATE TABLE IF NOT EXISTS "attendance" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    date TEXT,
+    status TEXT
+);
+CREATE TABLE IF NOT EXISTS "fees" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    amount REAL,
+    date TEXT,
+    type TEXT
+);
+CREATE TABLE IF NOT EXISTS "marks" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    subject TEXT,
+    score INTEGER,
+    term TEXT,
+    year INTEGER
+);
+CREATE TABLE IF NOT EXISTS "staff" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    staffId TEXT UNIQUE,
+    name TEXT,
+    role TEXT,
+    contact TEXT
+);
+CREATE TABLE IF NOT EXISTS "subjects" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    class TEXT,
+    teacherId TEXT
+);
+CREATE TABLE IF NOT EXISTS "assets" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    quantity INTEGER,
+    condition TEXT,
+    value REAL,
+    purchaseDate TEXT
+);
+CREATE TABLE IF NOT EXISTS "timetable" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    class TEXT,
+    day TEXT,
+    period TEXT,
+    subject TEXT,
+    teacherId TEXT
+);
+CREATE TABLE IF NOT EXISTS "library" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    ISBN TEXT,
+    author TEXT,
+    quantity INTEGER,
+    available INTEGER
+);
+CREATE TABLE IF NOT EXISTS "bookLoans" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bookId INTEGER,
+    studentId TEXT,
+    loanDate TEXT,
+    returnDate TEXT,
+    status TEXT
+);
+CREATE TABLE IF NOT EXISTS "discipline" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    infraction TEXT,
+    date TEXT,
+    action TEXT,
+    severity TEXT
+);
+CREATE TABLE IF NOT EXISTS "health" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    bloodGroup TEXT,
+    allergies TEXT,
+    emergencyContact TEXT
+);
+CREATE TABLE IF NOT EXISTS "payroll" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    staffId TEXT,
+    month TEXT,
+    year INTEGER,
+    salary REAL,
+    bonus REAL,
+    deductions REAL,
+    status TEXT
+);
+CREATE TABLE IF NOT EXISTS "pos" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    itemName TEXT,
+    price REAL,
+    quantity INTEGER,
+    date TEXT
+);
+CREATE TABLE IF NOT EXISTS "expenses" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    amount REAL,
+    category TEXT,
+    date TEXT
+);
+CREATE TABLE IF NOT EXISTS "notices" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    content TEXT,
+    date TEXT,
+    expiry TEXT
+);
+CREATE TABLE IF NOT EXISTS "hostels" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    capacity INTEGER,
+    gender TEXT
+);
+CREATE TABLE IF NOT EXISTS "hostelAssignments" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    hostelId INTEGER,
+    roomNo TEXT
+);
+CREATE TABLE IF NOT EXISTS "transport" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    route TEXT,
+    busNo TEXT,
+    driver TEXT
+);
+CREATE TABLE IF NOT EXISTS "transportAssignments" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    studentId TEXT,
+    routeId INTEGER
+);
+CREATE TABLE IF NOT EXISTS "notifications" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    message TEXT,
+    date TEXT,
+    type TEXT,
+    read INTEGER DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS "users" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT,
+    name TEXT
+);
+`);
+
+// Create default admin account if it doesn't exist
+const existingAdmin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
+if (!existingAdmin) {
+    db.prepare('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)').run('admin', 'admin123', 'Admin', 'System Administrator');
+    console.log('Default admin created: username=admin, password=admin123');
+}
+
+// Allowed tables for security
+const ALLOWED_TABLES = [
+    'students', 'attendance', 'fees', 'marks', 'staff', 'subjects', 'assets',
+    'timetable', 'library', 'bookLoans', 'discipline', 'health', 'payroll', 'pos',
+    'expenses', 'notices', 'hostels', 'hostelAssignments', 'transport',
+    'transportAssignments', 'notifications', 'users'
+];
+
+function validateTable(table, res) {
+    if (!ALLOWED_TABLES.includes(table)) {
+        res.status(400).json({ error: `Invalid table: ${table}` });
+        return false;
+    }
+    return true;
+}
+
+// GET all rows with optional filter params
+app.get('/api/:table', (req, res) => {
     const { table } = req.params;
-    const queryParams = req.query;
+    if (!validateTable(table, res)) return;
+
+    const { _sort, _order, _limit, ...filters } = req.query;
 
     try {
         let sql = `SELECT * FROM "${table}"`;
         const values = [];
+        const conditions = [];
 
-        if (Object.keys(queryParams).length > 0) {
-            const conditions = [];
-            let i = 1;
-            for (const [key, value] of Object.entries(queryParams)) {
-                if (key === '_limit') continue;
-                if (key === '_sort') continue;
-                if (key === '_order') continue;
-                conditions.push(`"${key}" = $${i}`);
-                values.push(value);
-                i++;
-            }
-
-            if (conditions.length > 0) {
-                sql += ` WHERE ` + conditions.join(' AND ');
-            }
-
-            if (queryParams._sort) {
-                const order = queryParams._order && queryParams._order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-                sql += ` ORDER BY "${queryParams._sort}" ${order}`;
-            }
-            if (queryParams._limit) {
-                sql += ` LIMIT $${i}`;
-                values.push(parseInt(queryParams._limit));
-            }
+        for (const [key, value] of Object.entries(filters)) {
+            conditions.push(`"${key}" = ?`);
+            values.push(value);
         }
+        if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
+        if (_sort) sql += ` ORDER BY "${_sort}" ${(_order || 'ASC').toUpperCase()}`;
+        if (_limit) sql += ` LIMIT ${parseInt(_limit)}`;
 
-        const result = await pool.query(sql, values);
-        res.json(result.rows);
+        const rows = db.prepare(sql).all(...values);
+        res.json(rows);
     } catch (err) {
-        console.error(`Error fetching from ${table}:`, err.message);
+        console.error(err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Generic GET single item by ID
-app.get('/api/:table/:id', async (req, res) => {
+// GET single row by id
+app.get('/api/:table/:id', (req, res) => {
     const { table, id } = req.params;
-
+    if (!validateTable(table, res)) return;
     try {
-        const sql = `SELECT * FROM "${table}" WHERE id = $1`;
-        const result = await pool.query(sql, [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Not found' });
-        }
-        res.json(result.rows[0]);
+        const row = db.prepare(`SELECT * FROM "${table}" WHERE id = ?`).get(id);
+        if (!row) return res.status(404).json({ error: 'Not found' });
+        res.json(row);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Generic POST
-app.post('/api/:table', async (req, res) => {
+// POST single or bulk insert
+app.post('/api/:table', (req, res) => {
     const { table } = req.params;
-    const data = req.body;
+    if (!validateTable(table, res)) return;
 
-    if (Array.isArray(data)) {
-        // Bulk insert
-        try {
-            // A simple approach for bulk insert: loop over them. (In production, use UNNEST or batch queries)
-            const results = [];
-            for (const row of data) {
-                const keys = Object.keys(row);
-                const values = Object.values(row);
-                const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-                const sql = `INSERT INTO "${table}" ("${keys.join('", "')}") VALUES (${placeholders}) RETURNING *`;
-                const result = await pool.query(sql, values);
-                results.push(result.rows[0]);
-            }
-            return res.status(201).json(results);
-        } catch (err) {
-            return res.status(500).json({ error: err.message });
-        }
-    } else {
-        // Single insert
-        try {
-            const keys = Object.keys(data);
-            const values = Object.values(data);
-            const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-            const sql = `INSERT INTO "${table}" ("${keys.join('", "')}") VALUES (${placeholders}) RETURNING *`;
-            const result = await pool.query(sql, values);
-            res.status(201).json(result.rows[0]);
-        } catch (err) {
-            console.error(`Error inserting into ${table}:`, err.message);
-            res.status(500).json({ error: err.message });
-        }
-    }
-});
-
-// Generic PUT
-app.put('/api/:table/:id', async (req, res) => {
-    const { table, id } = req.params;
-    const data = req.body;
-
-    try {
+    const insert = (data) => {
         const keys = Object.keys(data);
         const values = Object.values(data);
-        const setClause = keys.map((key, i) => `"${key}" = $${i + 1}`).join(', ');
-        const sql = `UPDATE "${table}" SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
-
-        // Add id to end of values array
-        values.push(id);
-
-        const result = await pool.query(sql, values);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Not found' });
-        }
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Bulk Modify (Generic PUT based on query parameters instead of ID)
-// Dexie's db.notifications.where('read').equals(0).modify({ read: 1 });
-app.put('/api/bulk/:table', async (req, res) => {
-    const { table } = req.params;
-    const queryParams = req.query; // e.g., ?read=0
-    const updateData = req.body;   // e.g., { read: 1 }
-
-    if (Object.keys(queryParams).length === 0) {
-        return res.status(400).json({ error: "Bulk update requires condition parameters" });
-    }
+        const placeholders = keys.map(() => '?').join(', ');
+        const sql = `INSERT INTO "${table}" (${keys.map(k => `"${k}"`).join(', ')}) VALUES (${placeholders})`;
+        const result = db.prepare(sql).run(...values);
+        return db.prepare(`SELECT * FROM "${table}" WHERE id = ?`).get(result.lastInsertRowid);
+    };
 
     try {
-        const updateKeys = Object.keys(updateData);
-        let valueIndex = 1;
-
-        const setClause = updateKeys.map(key => `"${key}" = $${valueIndex++}`).join(', ');
-        const values = Object.values(updateData);
-
-        const conditions = [];
-        for (const [key, value] of Object.entries(queryParams)) {
-            conditions.push(`"${key}" = $${valueIndex++}`);
-            values.push(value);
+        const data = req.body;
+        if (Array.isArray(data)) {
+            const rows = data.map(insert);
+            res.status(201).json(rows);
+        } else {
+            res.status(201).json(insert(data));
         }
-
-        const sql = `UPDATE "${table}" SET ${setClause} WHERE ${conditions.join(' AND ')} RETURNING *`;
-        const result = await pool.query(sql, values);
-
-        res.json({ updated: result.rowCount, records: result.rows });
     } catch (err) {
+        console.error(err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Generic DELETE
-app.delete('/api/:table/:id', async (req, res) => {
+// PUT update single row by id
+app.put('/api/:table/:id', (req, res) => {
     const { table, id } = req.params;
-
+    if (!validateTable(table, res)) return;
     try {
-        const sql = `DELETE FROM "${table}" WHERE id = $1 RETURNING *`;
-        const result = await pool.query(sql, [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Not found' });
-        }
-        res.json({ message: 'Deleted successfully' });
+        const data = req.body;
+        const keys = Object.keys(data);
+        const values = Object.values(data);
+        const setClause = keys.map(k => `"${k}" = ?`).join(', ');
+        db.prepare(`UPDATE "${table}" SET ${setClause} WHERE id = ?`).run(...values, id);
+        const row = db.prepare(`SELECT * FROM "${table}" WHERE id = ?`).get(id);
+        res.json(row);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Generic DELETE with filters (Bulk delete)
-app.delete('/api/bulk/:table', async (req, res) => {
+// PUT bulk update with query filters
+app.put('/api/bulk/:table', (req, res) => {
     const { table } = req.params;
-    const queryParams = req.query;
-
-    if (Object.keys(queryParams).length === 0) {
-        // Optionally prevent delete all, or allow it. Let's allow it for "clear()" equivalents.
-        try {
-            const result = await pool.query(`DELETE FROM "${table}"`);
-            return res.json({ deleted: result.rowCount });
-        } catch (err) {
-            return res.status(500).json({ error: err.message });
-        }
-    }
-
+    if (!validateTable(table, res)) return;
+    const filters = req.query;
+    const updateData = req.body;
     try {
-        const conditions = [];
-        const values = [];
-        let i = 1;
+        const setKeys = Object.keys(updateData);
+        const setValues = Object.values(updateData);
+        const setClause = setKeys.map(k => `"${k}" = ?`).join(', ');
 
-        for (const [key, value] of Object.entries(queryParams)) {
-            conditions.push(`"${key}" = $${i}`);
-            values.push(value);
-            i++;
+        const whereKeys = Object.keys(filters);
+        const whereValues = Object.values(filters);
+        const whereClause = whereKeys.map(k => `"${k}" = ?`).join(' AND ');
+
+        const sql = `UPDATE "${table}" SET ${setClause} WHERE ${whereClause}`;
+        const result = db.prepare(sql).run(...setValues, ...whereValues);
+        res.json({ updated: result.changes });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE single row by id
+app.delete('/api/:table/:id', (req, res) => {
+    const { table, id } = req.params;
+    if (!validateTable(table, res)) return;
+    try {
+        db.prepare(`DELETE FROM "${table}" WHERE id = ?`).run(id);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE bulk with query filters
+app.delete('/api/bulk/:table', (req, res) => {
+    const { table } = req.params;
+    if (!validateTable(table, res)) return;
+    const filters = req.query;
+    try {
+        if (Object.keys(filters).length === 0) {
+            const result = db.prepare(`DELETE FROM "${table}"`).run();
+            return res.json({ deleted: result.changes });
         }
-
-        const sql = `DELETE FROM "${table}" WHERE ${conditions.join(' AND ')}`;
-        const result = await pool.query(sql, values);
-        res.json({ deleted: result.rowCount });
+        const keys = Object.keys(filters);
+        const values = Object.values(filters);
+        const whereClause = keys.map(k => `"${k}" = ?`).join(' AND ');
+        const result = db.prepare(`DELETE FROM "${table}" WHERE ${whereClause}`).run(...values);
+        res.json({ deleted: result.changes });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Egles SMIS server running on port ${port}`);
 });
