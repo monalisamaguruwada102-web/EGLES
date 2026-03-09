@@ -1091,6 +1091,11 @@ tr:hover td {
     /* Tables scroll horizontally on mobile */
     .glass-panel {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .glass-panel table {
+        min-width: 500px;
     }
 
     /* Auth card full width on mobile */
@@ -1130,7 +1135,7 @@ tr:hover td {
     }
 
     /* Forcing buttons to wrap neatly on mobile */
-    .admin-header.button-group button {
+    .admin-header .button-group button {
         flex: 1;
         min-width: 140px;
     }
@@ -1139,6 +1144,7 @@ tr:hover td {
     .mobile-stack,
     [style*="grid-template-columns: 1fr 2fr"],
     [style*="grid-template-columns: 1fr 1fr"] {
+        display: grid !important;
         grid-template-columns: 1fr !important;
     }
 

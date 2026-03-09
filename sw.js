@@ -1,4 +1,4 @@
-const CACHE_NAME = 'egles-smis-v3';
+const CACHE_NAME = 'egles-smis-v4';
 const urlsToCache = [
     '/',
     '/index.html',
