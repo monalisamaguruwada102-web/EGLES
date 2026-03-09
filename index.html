@@ -3,13 +3,23 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Egles SMIS | Premium School Management</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Egles SMIS">
+    <meta name="description" content="Egles Secondary School Management & Information System">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -20,10 +30,14 @@
         <div class="blob blob-3"></div>
     </div>
 
+    <!-- Mobile Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="app.closeSidebar()"></div>
+
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">Egles <span>SMIS</span></div>
+            <button class="sidebar-close" onclick="app.closeSidebar()">✕</button>
         </div>
 
         <nav class="sidebar-nav" id="sidebar-nav">
@@ -41,12 +55,18 @@
     <!-- Main Wrapper -->
     <div class="main-wrapper">
         <header class="top-bar">
+            <!-- Mobile Hamburger -->
+            <button class="hamburger" id="hamburger-btn" onclick="app.openSidebar()" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+
             <div class="search-box">
-                <input type="text" id="global-search" placeholder="Search students, staff, or assets..."
+                <input type="text" id="global-search" placeholder="Search students, staff, assets..."
                     oninput="app.handleSearch(this.value)">
                 <div id="search-results" class="search-results-overlay hidden"></div>
             </div>
-            <div class="user-profile" style="display: flex; align-items: center; gap: 1.5rem;">
+
+            <div class="user-profile">
                 <div class="notification-wrapper">
                     <button class="notification-trigger" onclick="app.toggleNotifications()"
                         style="background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative;">
@@ -67,7 +87,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="theme-switcher" style="display: flex; gap: 0.5rem; margin-right: 1rem;">
+
+                <!-- Theme switcher hidden on mobile -->
+                <div class="theme-switcher desktop-only">
                     <div class="theme-chip" style="background: #0f172a;" title="Dark" onclick="app.setTheme('default')">
                     </div>
                     <div class="theme-chip" style="background: #f8fafc;" title="Light" onclick="app.setTheme('light')">
@@ -79,8 +101,9 @@
                     <div class="theme-chip" style="background: #451a03;" title="Sunset"
                         onclick="app.setTheme('sunset')"></div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="text-align: right;">
+
+                <div id="user-info" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="desktop-only" style="text-align: right;">
                         <span id="user-display-name" style="font-size: 0.9rem; font-weight: 600; display: block;">System
                             Administrator</span>
                         <a href="#" onclick="app.logout()"
@@ -88,7 +111,8 @@
                             Out</a>
                     </div>
                     <div id="user-avatar"
-                        style="width: 35px; height: 35px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        style="width: 38px; height: 38px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; cursor:pointer;"
+                        onclick="app.logout()" title="Sign Out">
                         A</div>
                 </div>
             </div>
@@ -102,13 +126,56 @@
         </main>
     </div>
 
+    <!-- Install PWA Banner -->
+    <div id="pwa-install-banner" class="pwa-banner hidden">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <span style="font-size:1.5rem;">📱</span>
+            <div>
+                <div style="font-weight:700; font-size:0.9rem;">Install Egles SMIS</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Add to your home screen for quick access</div>
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+            <button id="pwa-install-btn" class="btn-primary"
+                style="padding:0.5rem 1rem; font-size:0.8rem;">Install</button>
+            <button onclick="document.getElementById('pwa-install-banner').classList.add('hidden')"
+                style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">✕</button>
+        </div>
+    </div>
+
     <script src="db.js"></script>
     <script src="app_v1.js"></script>
-    <!-- <script>
+    <script>
+        // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registered'))
+                    .catch(err => console.log('SW failed:', err));
+            });
         }
-    </script> -->
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.remove('hidden');
+        });
+
+        document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            document.getElementById('pwa-install-banner').classList.add('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('pwa-install-banner')?.classList.add('hidden');
+        });
+    </script>
 </body>
 
 </html>

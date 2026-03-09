@@ -1,39 +1,50 @@
 const CACHE_NAME = 'egles-smis-v3';
-const ASSETS = [
-    './',
-    './index.html',
-    './style.css',
-    './app.js',
-    './db.js',
-    'https://unpkg.com/dexie/dist/dexie.js',
-    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap'
+const urlsToCache = [
+    '/',
+    '/index.html',
+    '/style.css',
+    '/app_v1.js',
+    '/db.js',
+    '/manifest.json',
+    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap',
+    'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+        caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
     );
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => self.clients.claim())
+        caches.keys().then(keys => Promise.all(
+            keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        ))
     );
+    self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
+    // Network first for API calls
+    if (event.request.url.includes('/api/')) {
+        event.respondWith(
+            fetch(event.request).catch(() => new Response('{"error":"offline"}', {
+                headers: { 'Content-Type': 'application/json' }
+            }))
+        );
+        return;
+    }
+
+    // Cache first for static assets
     event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
-        })
+        caches.match(event.request).then(response => {
+            return response || fetch(event.request).then(res => {
+                const clone = res.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                return res;
+            });
+        }).catch(() => caches.match('/index.html'))
     );
 });

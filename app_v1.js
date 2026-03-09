@@ -2,6 +2,19 @@ console.log("app.js loaded");
 const app = {
     container: document.getElementById('app-container'),
 
+    openSidebar() {
+        document.getElementById('sidebar')?.classList.add('open');
+        document.getElementById('sidebar-overlay')?.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    },
+
+    closeSidebar() {
+        document.getElementById('sidebar')?.classList.remove('open');
+        document.getElementById('sidebar-overlay')?.classList.remove('active');
+        document.body.style.overflow = '';
+    },
+
+
     async init() {
         this.container = document.getElementById('app-container');
 
