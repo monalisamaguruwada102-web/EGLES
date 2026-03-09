@@ -1,14 +1,16 @@
 const API_URL = '/api';
-let supabase = null;
+let supabaseClient = null;
 
 // Initialize Supabase from backend config
 async function initSupabase() {
     try {
         const res = await fetch(`${API_URL}/config`);
         const config = await res.json();
-        if (config.supabaseUrl && config.supabaseKey) {
-            supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
+        if (config.supabaseUrl && config.supabaseKey && window.supabase) {
+            supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
             console.log('☁️ Frontend Supabase initialized');
+        } else if (!window.supabase) {
+            console.warn('⚠️ Supabase JS library not loaded');
         }
     } catch (err) {
         console.warn('⚠️ Supabase frontend initialization failed:', err.message);
@@ -56,9 +58,9 @@ class QueryBuilder {
 
     async toArray() {
         // Cloud-First: Supabase
-        if (supabase) {
+        if (supabaseClient) {
             try {
-                let query = supabase.from(this.tableName).select('*');
+                let query = supabaseClient.from(this.tableName).select('*');
                 for (const [key, value] of Object.entries(this.conditions)) {
                     query = query.eq(key, value);
                 }
@@ -142,9 +144,9 @@ class TableProxy {
 
     async get(id) {
         // Cloud-First
-        if (supabase) {
+        if (supabaseClient) {
             try {
-                const { data, error } = await supabase.from(this.tableName).select('*').eq('id', id).single();
+                const { data, error } = await supabaseClient.from(this.tableName).select('*').eq('id', id).single();
                 if (!error && data) return data;
             } catch (err) { }
         }
@@ -156,9 +158,9 @@ class TableProxy {
     async add(data) {
         // Double Write: Supabase + Local API
         let cloudResult = null;
-        if (supabase) {
+        if (supabaseClient) {
             try {
-                const { data: inserted, error } = await supabase.from(this.tableName).insert(data).select().single();
+                const { data: inserted, error } = await supabaseClient.from(this.tableName).insert(data).select().single();
                 if (!error) cloudResult = inserted;
             } catch (err) {
                 console.error('Supabase add failed:', err);
@@ -177,9 +179,9 @@ class TableProxy {
     async put(data) {
         if (!data.id) return this.add(data);
 
-        if (supabase) {
+        if (supabaseClient) {
             try {
-                await supabase.from(this.tableName).upsert(data);
+                await supabaseClient.from(this.tableName).upsert(data);
             } catch (err) { }
         }
 
@@ -198,9 +200,9 @@ class TableProxy {
     }
 
     async delete(id) {
-        if (supabase) {
+        if (supabaseClient) {
             try {
-                await supabase.from(this.tableName).delete().eq('id', id);
+                await supabaseClient.from(this.tableName).delete().eq('id', id);
             } catch (err) { }
         }
         await fetch(`${API_URL}/${this.tableName}/${id}`, { method: 'DELETE' });
