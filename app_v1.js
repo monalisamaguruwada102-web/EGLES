@@ -89,6 +89,99 @@ const app = {
 
                 <div style="max-width:1200px; margin:0 auto; padding:3rem 2rem;">
                     
+                    <!-- PREMIUM: Live Event & Admissions Countdown -->
+                    <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); border-radius: 20px; padding: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; margin-bottom: 3rem; box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);">
+                        <div>
+                            <div style="text-transform: uppercase; font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem; opacity: 0.9;">Next Major Event</div>
+                            <h2 style="font-size: 2rem; margin: 0; font-weight: 800;">Term 2 Admissions Open</h2>
+                        </div>
+                        <div style="display: flex; gap: 1rem; text-align: center;">
+                            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem; border-radius: 15px; min-width: 80px;">
+                                <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">14</div>
+                                <div style="font-size: 0.8rem; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.8;">Days</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem; border-radius: 15px; min-width: 80px;">
+                                <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">08</div>
+                                <div style="font-size: 0.8rem; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.8;">Hrs</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem; border-radius: 15px; min-width: 80px;">
+                                <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">45</div>
+                                <div style="font-size: 0.8rem; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.8;">Mins</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PREMIUM: Hall of Fame Carousel -->
+                    <div style="margin-bottom: 4rem;">
+                        <h2 style="font-size: 2.2rem; margin-bottom: 2rem; text-align: center;">🏆 Wall of Excellence</h2>
+                        <div style="display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;" class="hide-scrollbar">
+                            <div style="min-width: 300px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; scroll-snap-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)'" onmouseout="this.style.transform='translateY(0)'">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+                                    <span style="font-size: 2rem;">🥇</span>
+                                    <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; height: fit-content;">Academics</span>
+                                </div>
+                                <h3 style="font-size: 1.3rem; margin:0 0 0.5rem 0;">Sarah Jenkins</h3>
+                                <p style="color: var(--text-muted); font-size: 0.95rem; margin:0;">National Science Olympiad Winner 2025. Perfect score in Advanced Physics.</p>
+                            </div>
+                            <div style="min-width: 300px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; scroll-snap-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)'" onmouseout="this.style.transform='translateY(0)'">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+                                    <span style="font-size: 2rem;">⚽</span>
+                                    <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; height: fit-content;">Sports</span>
+                                </div>
+                                <h3 style="font-size: 1.3rem; margin:0 0 0.5rem 0;">Senior Boys Football</h3>
+                                <p style="color: var(--text-muted); font-size: 0.95rem; margin:0;">Regional Champions for three consecutive years (2023-2025).</p>
+                            </div>
+                            <div style="min-width: 300px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; scroll-snap-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)'" onmouseout="this.style.transform='translateY(0)'">
+                                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+                                    <span style="font-size: 2rem;">🎭</span>
+                                    <span style="background: rgba(236, 72, 153, 0.1); color: var(--secondary); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; height: fit-content;">Arts</span>
+                                </div>
+                                <h3 style="font-size: 1.3rem; margin:0 0 0.5rem 0;">Drama Club</h3>
+                                <p style="color: var(--text-muted); font-size: 0.95rem; margin:0;">Awarded "Best Ensemble" at the National Schools Theatre Festival.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PREMIUM: Immersive Interactive Campus Map -->
+                    <div style="margin-bottom: 4rem;">
+                        <h2 style="font-size: 2.2rem; margin-bottom: 1.5rem;">📍 Interactive Campus Map</h2>
+                        <div style="position: relative; width: 100%; height: 400px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(var(--glass-border) 1px, transparent 1px); background-size: 20px 20px;">
+                            
+                            <!-- Main Academic Block -->
+                            <div style="position: absolute; top: 30%; left: 20%; width: 150px; height: 100px; background: rgba(99, 102, 241, 0.1); border: 2px solid var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);" onmouseover="this.style.transform='scale(1.05)'; this.style.background='rgba(99, 102, 241, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(99, 102, 241, 0.1)'">
+                                <div style="text-align: center;">
+                                    <span style="font-size: 1.5rem;">🏢</span><br>
+                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Main Block</span>
+                                </div>
+                            </div>
+
+                            <!-- Science Labs -->
+                            <div style="position: absolute; top: 20%; right: 25%; width: 120px; height: 120px; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='scale(1.05)'; this.style.background='rgba(16, 185, 129, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(16, 185, 129, 0.1)'">
+                                <div style="text-align: center;">
+                                    <span style="font-size: 1.5rem;">🔬</span><br>
+                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Science Labs</span>
+                                </div>
+                            </div>
+
+                            <!-- Sports Field -->
+                            <div style="position: absolute; bottom: 20%; right: 15%; width: 250px; height: 140px; background: rgba(245, 158, 11, 0.1); border: 2px solid var(--warning); border-radius: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);" onmouseover="this.style.transform='scale(1.02)'; this.style.background='rgba(245, 158, 11, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(245, 158, 11, 0.1)'">
+                                <div style="text-align: center;">
+                                    <span style="font-size: 1.5rem;">⚽</span><br>
+                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Athletics Field</span>
+                                </div>
+                            </div>
+
+                            <!-- Library -->
+                            <div style="position: absolute; bottom: 30%; left: 15%; width: 100px; height: 100px; background: rgba(236, 72, 153, 0.1); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);" onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(236, 72, 153, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(236, 72, 153, 0.1)'">
+                                <div style="text-align: center;">
+                                    <span style="font-size: 1.5rem;">📚</span><br>
+                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Library</span>
+                                </div>
+                            </div>
+                            
+                            <div style="position: absolute; top: 1rem; left: 1rem; background: var(--bg-main); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--glass-border); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">👆 Hover areas to explore</div>
+                        </div>
+                    </div>
                     <!-- Live Stats Grid -->
                     <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; margin-bottom:3rem;">
                         <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
@@ -140,7 +233,109 @@ const app = {
                         </div>
 
                     </div>
+
+                    <!-- PREMIUM: Visual Curriculum Explorer -->
+                    <div style="margin-top: 5rem; margin-bottom: 5rem;">
+                        <h2 style="font-size: 2.2rem; margin-bottom: 2rem; text-align: center;">🔬 Academic Pathways</h2>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                            
+                            <!-- STEM -->
+                            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.15) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
+                                <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">🧬</div>
+                                <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--success);"><span style="font-size: 1.8rem;">🧪</span> STEM</h3>
+                                <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">Science, Technology, Engineering & Math</p>
+                                
+                                <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid rgba(16, 185, 129, 0.2); padding-top: 0;">
+                                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <li>✓ Advanced Physics Lab</li>
+                                        <li>✓ Robotics & AI Club</li>
+                                        <li>✓ AP Calculus & Statistics</li>
+                                        <li>✓ Environmental Science</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Humanities -->
+                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0.15) 100%); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
+                                <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">🏛️</div>
+                                <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);"><span style="font-size: 1.8rem;">📚</span> Humanities</h3>
+                                <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">Languages, History & Social Sciences</p>
+                                
+                                <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid rgba(99, 102, 241, 0.2); padding-top: 0;">
+                                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <li>✓ World Literature</li>
+                                        <li>✓ Modern European History</li>
+                                        <li>✓ Psychology & Sociology</li>
+                                        <li>✓ Model UN Debate Team</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Creative Arts -->
+                            <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.05) 0%, rgba(236, 72, 153, 0.15) 100%); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 20px; padding: 2rem; position: relative; overflow: hidden; transition: all 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.03)'; this.querySelector('.curriculum-details').style.maxHeight='200px'; this.querySelector('.curriculum-details').style.opacity='1'; this.querySelector('.curriculum-details').style.marginTop='1rem'" onmouseout="this.style.transform='scale(1)'; this.querySelector('.curriculum-details').style.maxHeight='0'; this.querySelector('.curriculum-details').style.opacity='0'; this.querySelector('.curriculum-details').style.marginTop='0'">
+                                <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg); pointer-events: none;">🎨</div>
+                                <h3 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--secondary);"><span style="font-size: 1.8rem;">🎭</span> Creative Arts</h3>
+                                <p style="color: var(--text); font-size: 1rem; margin-top: 0.5rem; font-weight: 500;">Fine Arts, Music & Performance</p>
+                                
+                                <div class="curriculum-details" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; border-top: 1px solid rgba(236, 72, 153, 0.2); padding-top: 0;">
+                                    <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <li>✓ Digital Graphic Design</li>
+                                        <li>✓ Classical & Jazz Orchestra</li>
+                                        <li>✓ Theatre Production</li>
+                                        <li>✓ 3D Sculpting Studio</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- PREMIUM: Dynamic Transport & Weather -->
+                    <div style="margin-bottom: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;" class="mobile-stack">
+                        <div class="glass-panel" style="margin: 0; display: flex; align-items: center; justify-content: space-between; padding: 2rem;">
+                            <div>
+                                <h3 style="margin: 0 0 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Local Campus Weather</h3>
+                                <div style="font-size: 2.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+                                    ☀️ 24°C
+                                </div>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--primary);">Perfect weather for outdoor sports!</p>
+                            </div>
+                            <div style="font-size: 4rem; opacity: 0.2;">🌤️</div>
+                        </div>
+
+                        <div class="glass-panel" style="margin: 0; display: flex; align-items: center; justify-content: space-between; padding: 2rem;">
+                            <div>
+                                <h3 style="margin: 0 0 0.5rem 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Transport Status</h3>
+                                <div style="font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; color: var(--success);">
+                                    🚌 All Routes On Time
+                                </div>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-muted);">Next dispatch: 15:30 PM</p>
+                            </div>
+                            <div style="font-size: 4rem; opacity: 0.2;">🚍</div>
+                        </div>
+                    </div>
+
                 </div>
+
+                <!-- PREMIUM: Alumni Parallax Section -->
+                <div style="position: relative; padding: 6rem 2rem; overflow: hidden; background: #0f172a; color: white;">
+                    <!-- CSS Parallax Background Trick -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 200%; background: radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 0%, #0f172a 70%); transform: translateY(-25%); z-index: 0; opacity: 0.5; pointer-events: none;"></div>
+                    
+                    <div style="max-width: 1000px; margin: 0 auto; position: relative; z-index: 10; text-align: center;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🎓</span>
+                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; font-weight: 800;">Forging Global Leaders</h2>
+                        
+                        <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 3rem; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                            <p style="font-size: 1.4rem; font-style: italic; line-height: 1.6; margin-bottom: 2rem;">"The foundation I received here didn't just teach me how to pass exams; it taught me how to think critically, innovate, and lead with empathy. It was the launchpad for my career in AI research."</p>
+                            <div>
+                                <h4 style="margin: 0; font-size: 1.2rem; font-weight: 700;">Dr. Alistair Chen</h4>
+                                <p style="color: var(--primary-bright); margin: 0.5rem 0 0 0; font-size: 0.95rem; font-weight: 600;">Class of 2014 &bull; Senior Lead Engineer, Quantum Compute</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <style>
