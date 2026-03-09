@@ -1,0 +1,2292 @@
+console.log("app.js loaded");
+const app = {
+    container: document.getElementById('app-container'),
+
+    async init() {
+        console.log("app.init() started");
+        this.container = document.getElementById('app-container');
+
+        // Phase 6: Authentication Check
+        if (this.checkAuth()) {
+            this.renderSidebar();
+            this.updateHeaderUser();
+            this.renderDashboard();
+            this.loadTheme();
+            console.log("Checking system alerts...");
+            await this.checkSystemAlerts();
+            console.log("Updating notification badge...");
+            await this.updateNotifBadge();
+            console.log("app.init() - Auth flow complete");
+        } else {
+            this.showLogin();
+        }
+
+        this.updateOnlineStatus();
+        window.addEventListener('online', () => this.updateOnlineStatus());
+        window.addEventListener('offline', () => this.updateOnlineStatus());
+    },
+
+    checkAuth() {
+        const user = JSON.parse(localStorage.getItem('egles_session'));
+        if (user) {
+            this.currentUser = user;
+            return true;
+        }
+        return false;
+    },
+
+    showLogin(isSignup = false) {
+        this.container.innerHTML = `
+            <div class="auth-overlay">
+                <div class="glass-panel auth-card">
+                    <div class="logo" style="text-align:center; margin-bottom: 2rem;">Egles <span>SMIS</span></div>
+                    <h2>${isSignup ? 'Create Account' : 'Welcome Back'}</h2>
+                    <p style="margin-bottom: 2rem;">Please enter your credentials to continue.</p>
+                    
+                    <form onsubmit="app.handleAuth(event, ${isSignup})">
+                        ${isSignup ? '<input type="text" id="auth-name" placeholder="Full Name" required>' : ''}
+                        <input type="text" id="auth-user" placeholder="Username" required>
+                        <input type="password" id="auth-pass" placeholder="Password" required>
+                        ${isSignup ? `
+                            <select id="auth-role">
+                                <option value="Student">Student</option>
+                                <option value="Parent">Parent</option>
+                            </select>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                Note: Staff accounts must be provisioned by an Administrator.
+                            </p>
+                        ` : ''}
+                        
+                        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                            ${isSignup ? 'Sign Up' : 'Sign In'}
+                        </button>
+                    </form>
+                    
+                    <div style="margin-top: 2rem; text-align: center; font-size: 0.9rem;">
+                        ${isSignup ? 'Already have an account?' : 'Need a new account?'} 
+                        <a href="#" onclick="app.showLogin(${!isSignup})" style="color: var(--primary); font-weight: 600; text-decoration: none; margin-left: 0.5rem;">
+                            ${isSignup ? 'Sign In' : 'Sign Up'}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async handleAuth(e, isSignup) {
+        e.preventDefault();
+        const username = document.getElementById('auth-user').value;
+        const password = document.getElementById('auth-pass').value;
+
+        if (isSignup) {
+            const name = document.getElementById('auth-name').value;
+            const role = document.getElementById('auth-role').value;
+
+            const exists = await db.users.where('username').equals(username).first();
+            if (exists) return alert('Username already exists');
+
+            await db.users.add({ username, password, name, role });
+            alert('Account created! Please sign in.');
+            this.showLogin(false);
+        } else {
+            const user = await db.users.where('username').equals(username).and(u => u.password === password).first();
+            if (user) {
+                localStorage.setItem('egles_session', JSON.stringify(user));
+                this.init();
+            } else {
+                alert('Invalid credentials');
+            }
+        }
+    },
+
+    logout() {
+        localStorage.removeItem('egles_session');
+        window.location.reload();
+    },
+
+    updateHeaderUser() {
+        const nameEl = document.getElementById('user-display-name');
+        const avatarEl = document.getElementById('user-avatar');
+        if (this.currentUser && nameEl) {
+            nameEl.textContent = this.currentUser.name || this.currentUser.username;
+            const roleLabel = document.createElement('span');
+            roleLabel.style.cssText = 'font-size: 0.65rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;';
+            roleLabel.textContent = this.currentUser.role;
+            nameEl.after(roleLabel);
+        }
+        if (this.currentUser && avatarEl) {
+            avatarEl.textContent = (this.currentUser.name || 'U').charAt(0).toUpperCase();
+        }
+    },
+
+    isReadOnly() {
+        if (!this.currentUser) return true;
+        return ['Student', 'Parent'].includes(this.currentUser.role);
+    },
+
+    canModify() {
+        return !this.isReadOnly();
+    },
+
+    // --- Theme Management ---
+    setTheme(themeName) {
+        document.body.className = '';
+        if (themeName !== 'default') {
+            document.body.classList.add(`${themeName}-theme`);
+        }
+        localStorage.setItem('egles_theme', themeName);
+    },
+
+    loadTheme() {
+        const theme = localStorage.getItem('egles_theme');
+        if (theme) this.setTheme(theme);
+    },
+
+    toggleTheme() {
+        const themes = ['default', 'light', 'midnight', 'aurora', 'sunset'];
+        const current = localStorage.getItem('egles_theme') || 'default';
+        const idx = themes.indexOf(current);
+        const next = themes[(idx + 1) % themes.length];
+        this.setTheme(next);
+    },
+
+    renderSidebar() {
+        const role = this.currentUser.role;
+        const nav = document.getElementById('sidebar-nav');
+
+        const menu = [
+            {
+                label: 'Core', items: [
+                    { id: 'dashboard', name: 'Dashboard', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
+                    { id: 'students', name: 'Students', roles: ['Admin', 'Teacher'] },
+                    { id: 'staff', name: 'Staff', roles: ['Admin'] }
+                ]
+            },
+            {
+                label: 'Academic', items: [
+                    { id: 'subjects', name: 'Subjects', roles: ['Admin', 'Teacher'] },
+                    { id: 'exams', name: 'Examinations', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
+                    { id: 'timetable', name: 'Timetable', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
+                    { id: 'attendance', name: 'Attendance', roles: ['Admin', 'Teacher'] },
+                    { id: 'library', name: 'Library', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
+                    { id: 'discipline', name: 'Discipline', roles: ['Admin', 'Teacher'] },
+                    { id: 'health', name: 'Health Records', roles: ['Admin', 'Teacher', 'Parent'] }
+                ]
+            },
+            {
+                label: 'Finance & Infrastructure', items: [
+                    { id: 'fees', name: 'Fees Management', roles: ['Admin', 'Parent'] },
+                    { id: 'payroll', name: 'Staff Payroll', roles: ['Admin'] },
+                    { id: 'inventory', name: 'Inventory & Assets', roles: ['Admin'] },
+                    { id: 'pos', name: 'Tuckshop POS', roles: ['Admin', 'Staff'] },
+                    { id: 'expenses', name: 'Expenses', roles: ['Admin'] },
+                    { id: 'hostels', name: 'Hostels', roles: ['Admin', 'Parent'] },
+                    { id: 'transport', name: 'Transport', roles: ['Admin', 'Parent'] }
+                ]
+            },
+            {
+                label: 'Communication', items: [
+                    { id: 'notices', name: 'Notice Board', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
+                    { id: 'resources', name: 'Resources', roles: ['Admin', 'Teacher', 'Parent', 'Student'] }
+                ]
+            }
+        ];
+
+        nav.innerHTML = menu.map(group => {
+            const visibleItems = group.items.filter(item => item.roles.includes(role));
+            if (visibleItems.length === 0) return '';
+
+            return `
+                <div class="nav-group">
+                    <span class="nav-label">${group.label}</span>
+                    ${visibleItems.map(item => `
+                        <button class="nav-item ${item.id === 'dashboard' ? 'active' : ''}" onclick="app.navigate('${item.id}')">
+                            <span>${item.name}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }).join('');
+    },
+
+    // --- Phase 2: Notification & Alert Logic ---
+    async checkSystemAlerts() {
+        // 1. Check for students with low fees (simulated threshold $1000)
+        const students = await db.students.toArray();
+        const fees = await db.fees.toArray();
+
+        for (const student of students) {
+            const studentFees = fees.filter(f => f.studentId === student.studentId)
+                .reduce((acc, f) => acc + parseFloat(f.amount), 0);
+
+            if (studentFees < 1000) {
+                await this.addNotification(
+                    'Fee Payment Alert',
+                    `Student ${student.name} (${student.studentId}) has paid less than $1,000. Current: $${studentFees.toLocaleString()}.`,
+                    'finance'
+                );
+            }
+        }
+
+        // 2. Check for disciplinary issues (simulated count >= 3)
+        const discipline = await db.discipline.toArray();
+        const infractionCounts = {};
+        discipline.forEach(d => {
+            infractionCounts[d.studentId] = (infractionCounts[d.studentId] || 0) + 1;
+        });
+
+        for (const sid in infractionCounts) {
+            if (infractionCounts[sid] >= 3) {
+                const student = await db.students.where('studentId').equals(sid).first();
+                await this.addNotification(
+                    'Disciplinary Warning',
+                    `Student ${student ? student.name : sid} has recorded ${infractionCounts[sid]} infractions. Review required.`,
+                    'discipline'
+                );
+            }
+        }
+    },
+
+    async addNotification(title, message, type) {
+        // Prevent duplicate notifications for same day/title
+        const today = new Date().toISOString().split('T')[0];
+        const exists = await db.notifications.where('title').equals(title).and(n => n.message === message).first();
+
+        if (!exists) {
+            await db.notifications.add({
+                title,
+                message,
+                type,
+                date: new Date().toLocaleString(),
+                read: 0
+            });
+        }
+    },
+
+    async updateNotifBadge() {
+        const unreadCount = await db.notifications.where('read').equals(0).count();
+        const badge = document.getElementById('notif-badge');
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    },
+
+    toggleNotifications() {
+        const panel = document.getElementById('notification-panel');
+        const isHidden = panel.classList.contains('hidden');
+
+        if (isHidden) {
+            this.renderNotifications();
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    },
+
+    async renderNotifications() {
+        const notifications = await db.notifications.reverse().limit(10).toArray();
+        const list = document.getElementById('notif-list');
+
+        if (notifications.length === 0) {
+            list.innerHTML = '<p class="empty-notif" style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">No new notifications</p>';
+            return;
+        }
+
+        list.innerHTML = notifications.map(n => `
+            <div class="notif-item ${n.read ? '' : 'unread'}" onclick="app.markAsRead(${n.id})">
+                <div class="notif-icon" style="background: ${this.getNotifColor(n.type)}">
+                    ${this.getNotifEmoji(n.type)}
+                </div>
+                <div class="notif-content">
+                    <div class="notif-title">${n.title}</div>
+                    <div class="notif-msg">${n.message}</div>
+                    <div class="notif-time">${n.date}</div>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    getNotifColor(type) {
+        switch (type) {
+            case 'finance': return 'rgba(16, 185, 129, 0.1)';
+            case 'discipline': return 'rgba(239, 68, 68, 0.1)';
+            default: return 'rgba(99, 102, 241, 0.1)';
+        }
+    },
+
+    getNotifEmoji(type) {
+        switch (type) {
+            case 'finance': return '💰';
+            case 'discipline': return '⚠️';
+            default: return '📢';
+        }
+    },
+
+    async markAsRead(id) {
+        await db.notifications.update(id, { read: 1 });
+        this.updateNotifBadge();
+        this.renderNotifications();
+    },
+
+    async markAllAsRead() {
+        await db.notifications.where('read').equals(0).modify({ read: 1 });
+        this.updateNotifBadge();
+        this.renderNotifications();
+    },
+
+    updateOnlineStatus() {
+        const indicator = document.getElementById('offline-indicator');
+        if (indicator) {
+            if (navigator.onLine) {
+                indicator.classList.add('hidden');
+            } else {
+                indicator.classList.remove('hidden');
+            }
+        }
+    },
+
+    showProvisionModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-backdrop';
+        modal.innerHTML = `
+            <div class="glass-panel auth-card" style="width: 500px; padding: 3rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 24px; position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 2500;">
+                <h2 style="text-align: center;">Provision New Staff</h2>
+                <p style="text-align: center; margin-bottom: 2rem;">Register a teacher or administrator and generate their credentials.</p>
+                <form id="provision-form" onsubmit="app.handleProvision(event)">
+                    <input type="text" id="prov-name" placeholder="Full Name" required>
+                    <select id="prov-role" required style="width: 100%; margin: 10px 0; padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text);">
+                        <option value="Teacher">Teacher</option>
+                        <option value="Admin">Administrator</option>
+                    </select>
+                    <input type="text" id="prov-contact" placeholder="Contact Number" required>
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn-primary" style="flex: 1;">Generate Credentials</button>
+                        <button type="button" class="btn-primary" style="flex: 1; background: var(--bg-card); color: var(--text);" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    },
+
+    async handleProvision(e) {
+        e.preventDefault();
+        const name = document.getElementById('prov-name').value;
+        const role = document.getElementById('prov-role').value;
+        const contact = document.getElementById('prov-contact').value;
+
+        const staffId = (role === 'Admin' ? 'ADM-' : 'TCH-') + Math.floor(1000 + Math.random() * 9000);
+        const username = name.toLowerCase().replace(/\s/g, '.') + Math.floor(10 + Math.random() * 89);
+        const password = Math.random().toString(36).slice(-8);
+
+        // Save to staff table
+        await db.staff.add({ staffId, name, role, contact });
+
+        // Save to users table for authentication
+        await db.users.add({ username, password, role, name });
+
+        const modalOverlay = e.target.closest('.modal-backdrop');
+        modalOverlay.innerHTML = `
+            <div class="glass-panel auth-card" style="width: 500px; padding: 3rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 24px; position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 2500; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                <h2>Staff Provisioned Successfully</h2>
+                <p>Please share these secure credentials with <strong>${name}</strong>.</p>
+                
+                <div style="background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 14px; margin: 2rem 0; text-align: left;">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Username</label>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">${username}</div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Temporary Password</label>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent);">${password}</div>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" style="width: 100%;" onclick="this.closest('.modal-backdrop').remove(); app.renderStaff();">Close & Refresh</button>
+            </div>
+        `;
+    },
+
+    async navigate(page) {
+        if (!this.checkPermission(page)) {
+            this.navigate('dashboard');
+            return;
+        }
+
+        // Update sidebar active state
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.classList.remove('active');
+            const btnText = btn.querySelector('span').innerText.toLowerCase();
+            const pageLower = page.toLowerCase();
+            if (btnText === pageLower || (pageLower === 'pos' && btnText === 'tuckshop pos') || (pageLower === 'exams' && btnText === 'examinations')) {
+                btn.classList.add('active');
+            }
+        });
+
+        this.container.innerHTML = `
+            <div class="loader">
+                <div class="spinner"></div>
+                <p>Loading ${page.charAt(0).toUpperCase() + page.slice(1)}...</p>
+            </div>
+        `;
+
+        switch (page) {
+            case 'dashboard':
+                await this.renderDashboard();
+                break;
+            case 'students':
+                await this.renderStudents();
+                break;
+            case 'staff':
+                await this.renderStaff();
+                break;
+            case 'subjects':
+                await this.renderSubjects();
+                break;
+            case 'exams':
+                await this.renderExams();
+                break;
+            case 'timetable':
+                await this.renderTimetable();
+                break;
+            case 'attendance':
+                await this.renderAttendance();
+                break;
+            case 'library':
+                await this.renderLibrary();
+                break;
+            case 'discipline':
+                await this.renderDiscipline();
+                break;
+            case 'health':
+                await this.renderHealth();
+                break;
+            case 'fees':
+                await this.renderFees();
+                break;
+            case 'payroll':
+                await this.renderPayroll();
+                break;
+            case 'inventory':
+                await this.renderInventory();
+                break;
+            case 'pos':
+                await this.renderPOS();
+                break;
+            case 'expenses':
+                await this.renderExpenses();
+                break;
+            case 'hostels':
+                await this.renderHostels();
+                break;
+            case 'transport':
+                await this.renderTransport();
+                break;
+            case 'notices':
+                await this.renderNotices();
+                break;
+            case 'resources':
+                await this.renderResources();
+                break;
+            default:
+                this.container.innerHTML = '<div class="glass-panel"><h1>404 Page Not Found</h1></div>';
+        }
+    },
+
+    async renderTimetable() {
+        const slots = await db.timetable.toArray();
+        const subjects = await db.subjects.toArray();
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const periods = ['08:00 - 09:00', '09:00 - 10:00', '10:30 - 11:30', '11:30 - 12:30', '14:00 - 15:00'];
+
+        const canEdit = this.canModify();
+        this.container.innerHTML = `
+            <h1>Timetable ${canEdit ? 'Generator' : 'View'}</h1>
+            ${canEdit ? `
+            <div class="glass-panel" style="margin-bottom: 2rem;">
+                <h2>Add Schedule</h2>
+                <form id="tt-form" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <input type="text" id="tt-class" placeholder="Class (e.g. Form 1A)" required style="flex: 1;">
+                    <select id="tt-day" required style="flex: 1;">
+                        ${days.map(d => `<option value="${d}">${d}</option>`).join('')}
+                    </select>
+                    <select id="tt-period" required style="flex: 1;">
+                        ${periods.map(p => `<option value="${p}">${p}</option>`).join('')}
+                    </select>
+                    <select id="tt-subj" required style="flex: 1;">
+                        ${subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
+                    </select>
+                    <button type="submit" class="btn-primary">Add Entry</button>
+                </form>
+            </div>` : ''}
+            <div class="glass-panel" style="overflow-x: auto;">
+                <h2>Visual Schedule</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 1rem; border: 1px solid var(--glass-border);">Period</th>
+                            ${days.map(d => `<th style="padding: 1rem; border: 1px solid var(--glass-border);">${d}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${periods.map(p => `
+                            <tr>
+                                <td style="padding: 1rem; border: 1px solid var(--glass-border); font-weight: 600;">${p}</td>
+                                ${days.map(d => {
+            const entry = slots.find(s => s.day === d && s.period === p);
+            return `<td style="padding: 1rem; border: 1px solid var(--glass-border); background: ${entry ? 'var(--glass-bg)' : ''};">
+                                        ${entry ? `<div style="font-weight: 700;">${entry.subject}</div><div style="font-size: 0.8rem; color: var(--text-muted);">${entry.class}</div>` : '-'}
+                                    </td>`;
+        }).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        if (canEdit) {
+            document.getElementById('tt-form').onsubmit = async (e) => {
+                e.preventDefault();
+                await db.timetable.add({
+                    class: document.getElementById('tt-class').value,
+                    day: document.getElementById('tt-day').value,
+                    period: document.getElementById('tt-period').value,
+                    subject: document.getElementById('tt-subj').value
+                });
+                this.renderTimetable();
+            };
+        }
+    },
+
+    async renderLibrary() {
+        const books = await db.library.toArray();
+        const loans = await db.bookLoans.toArray();
+        const students = await db.students.toArray();
+
+        const canEdit = this.canModify();
+        this.container.innerHTML = `
+            <h1>Library ${canEdit ? 'Management' : 'Catalog'}</h1>
+            <div style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+                ${canEdit ? `
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Register Book</h2>
+                    <form id="lib-form">
+                        <input type="text" id="lib-title" placeholder="Book Title" required>
+                        <input type="text" id="lib-isbn" placeholder="ISBN" required>
+                        <input type="number" id="lib-qty" placeholder="Quantity" required>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Add Book</button>
+                    </form>
+                    <h2 style="margin-top: 2rem;">Issue Book</h2>
+                    <form id="loan-form">
+                        <select id="loan-book" required>
+                            <option value="">Select Book</option>
+                            ${books.filter(b => b.available > 0).map(b => `<option value="${b.id}">${b.title}</option>`).join('')}
+                        </select>
+                        <select id="loan-student" required>
+                            <option value="">Select Student</option>
+                            ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
+                        </select>
+                        <button type="submit" class="btn-primary" style="width: 100%; background: var(--secondary);">Issue Item</button>
+                    </form>
+                </div>` : ''}
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Library Catalog</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
+                                <th style="padding: 1rem;">Title</th>
+                                <th style="padding: 1rem;">Available</th>
+                                <th style="padding: 1rem;">On Loan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${books.map(b => `
+                                <tr>
+                                    <td style="padding: 1rem;">${b.title}</td>
+                                    <td style="padding: 1rem;">${b.available}/${b.quantity}</td>
+                                    <td style="padding: 1rem;">
+                                        ${loans.filter(l => l.bookId == b.id && l.status === 'Issued').length}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        if (canEdit) {
+            document.getElementById('lib-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const qty = parseInt(document.getElementById('lib-qty').value);
+                await db.library.add({
+                    title: document.getElementById('lib-title').value,
+                    ISBN: document.getElementById('lib-isbn').value,
+                    quantity: qty,
+                    available: qty
+                });
+                this.renderLibrary();
+            };
+
+            document.getElementById('loan-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const bookId = parseInt(document.getElementById('loan-book').value);
+                await db.bookLoans.add({
+                    bookId: bookId,
+                    studentId: document.getElementById('loan-student').value,
+                    loanDate: new Date().toLocaleDateString(),
+                    status: 'Issued'
+                });
+                const book = await db.library.get(bookId);
+                await db.library.update(bookId, { available: book.available - 1 });
+                this.renderLibrary();
+            };
+        }
+    },
+
+    async renderDiscipline() {
+        const discipline = await db.discipline.toArray();
+        const students = await db.students.toArray();
+
+        this.container.innerHTML = `
+            <h1>Disciplinary Tracker</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="disc-form" class="glass-panel" style="margin: 0;">
+                    <h2>Record Infraction</h2>
+                    <select id="ds-student" required>
+                        <option value="">Select Student</option>
+                        ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
+                    </select>
+                    <input type="text" id="ds-infraction" placeholder="Reason (e.g. Late for class)" required>
+                    <select id="ds-severity">
+                        <option value="Minor">Minor</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Severe">Severe</option>
+                    </select>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Log Incident</button>
+                </form>
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Incident Log</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 1rem;">Student</th>
+                                <th style="padding: 1rem;">Infraction</th>
+                                <th style="padding: 1rem;">Severity</th>
+                                <th style="padding: 1rem;">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${discipline.map(d => `
+                                <tr>
+                                    <td style="padding: 1rem;">${students.find(s => s.studentId === d.studentId)?.name || d.studentId}</td>
+                                    <td style="padding: 1rem;">${d.infraction}</td>
+                                    <td style="padding: 1rem;"><span style="color: ${d.severity === 'Severe' ? 'var(--danger)' : d.severity === 'Moderate' ? 'var(--warning)' : 'var(--success)'}">${d.severity}</span></td>
+                                    <td style="padding: 1rem;">${d.date}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('disc-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.discipline.add({
+                studentId: document.getElementById('ds-student').value,
+                infraction: document.getElementById('ds-infraction').value,
+                severity: document.getElementById('ds-severity').value,
+                date: new Date().toLocaleDateString()
+            });
+            this.renderDiscipline();
+        };
+    },
+
+    async renderHealth() {
+        const records = await db.health.toArray();
+        const students = await db.students.toArray();
+
+        const canEdit = this.canModify();
+        this.container.innerHTML = `
+            <h1>Student Health Records</h1>
+            <div style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+                ${canEdit ? `
+                <form id="health-form" class="glass-panel" style="margin: 0;">
+                    <h2>Add/Update Health Info</h2>
+                    <select id="h-student" required>
+                        <option value="">Select Student</option>
+                        ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
+                    </select>
+                    <input type="text" id="h-blood" placeholder="Blood Group (e.g. O+)" required>
+                    <textarea id="h-allergies" placeholder="Known Allergies" style="min-height: 100px;"></textarea>
+                    <input type="text" id="h-contact" placeholder="Emergency Contact" required>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Save Record</button>
+                </form>` : ''}
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Medical Database</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 1rem; text-align: left;">Student</th>
+                                <th style="padding: 1rem; text-align: left;">Blood Group</th>
+                                <th style="padding: 1rem; text-align: left;">Allergies</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${records.map(r => `
+                                <tr>
+                                    <td style="padding: 1rem;">${students.find(s => s.studentId === r.studentId)?.name || r.studentId}</td>
+                                    <td style="padding: 1rem;">${r.bloodGroup}</td>
+                                    <td style="padding: 1rem; font-size: 0.9rem; color: var(--text-muted);">${r.allergies || 'None'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        if (canEdit) {
+            document.getElementById('health-form').onsubmit = async (e) => {
+                e.preventDefault();
+                await db.health.put({
+                    studentId: document.getElementById('h-student').value,
+                    bloodGroup: document.getElementById('h-blood').value,
+                    allergies: document.getElementById('h-allergies').value,
+                    emergencyContact: document.getElementById('h-contact').value
+                });
+                this.renderHealth();
+            };
+        }
+    },
+
+    toggleTheme() {
+        document.body.classList.toggle('light-theme');
+        const isLight = document.body.classList.contains('light-theme');
+        document.getElementById('theme-toggle').innerText = isLight ? '🌙' : '🌓';
+    },
+
+    async renderPayroll() {
+        const staff = await db.staff.toArray();
+        const payroll = await db.payroll.toArray();
+        const month = new Date().toLocaleString('default', { month: 'long' });
+        const year = 2026;
+
+        this.container.innerHTML = `
+            <h1>Staff Payroll System</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="pay-form" class="glass-panel" style="margin: 0;">
+                    <h2>Process Payment</h2>
+                    <select id="p-staff" required>
+                        <option value="">Select Staff Member</option>
+                        ${staff.map(s => `<option value="${s.staffId}">${s.name} (${s.role})</option>`).join('')}
+                    </select>
+                    <input type="number" id="p-salary" placeholder="Basic Salary" required>
+                    <input type="number" id="p-bonus" placeholder="Bonus" value="0">
+                    <input type="number" id="p-deduct" placeholder="Deductions" value="0">
+                    <button type="submit" class="btn-primary" style="width: 100%;">Generate Payslip</button>
+                </form>
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Payroll Log - ${month} ${year}</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 1rem;">Staff</th>
+                                <th style="padding: 1rem;">Net Salary</th>
+                                <th style="padding: 1rem;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${payroll.filter(p => p.month === month).map(p => `
+                                <tr>
+                                    <td style="padding: 1rem;">${staff.find(s => s.staffId === p.staffId)?.name || p.staffId}</td>
+                                    <td style="padding: 1rem;">$${(p.salary + p.bonus - p.deductions).toFixed(2)}</td>
+                                    <td style="padding: 1rem;"><span style="color: var(--success);">Paid</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('pay-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.payroll.add({
+                staffId: document.getElementById('p-staff').value,
+                salary: parseFloat(document.getElementById('p-salary').value),
+                bonus: parseFloat(document.getElementById('p-bonus').value || 0),
+                deductions: parseFloat(document.getElementById('p-deduct').value || 0),
+                month: month,
+                year: year,
+                status: 'Paid'
+            });
+            this.renderPayroll();
+        };
+    },
+
+    async renderPOS() {
+        const sales = await db.pos.toArray();
+        const totalSales = sales.reduce((acc, s) => acc + (s.price * s.quantity), 0);
+
+        this.container.innerHTML = `
+            <h1>Tuckshop POS Terminal</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="pos-form" class="glass-panel" style="margin: 0;">
+                    <h2>New Transaction</h2>
+                    <input type="text" id="pos-item" placeholder="Item Name" required>
+                    <input type="number" id="pos-price" placeholder="Price" step="0.01" required>
+                    <input type="number" id="pos-qty" placeholder="Quantity" value="1" required>
+                    <button type="submit" class="btn-primary" style="width: 100%; background: var(--accent);">Complete Sale</button>
+                </form>
+                <div class="glass-panel" style="margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2>Daily Sales</h2>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">$${totalSales.toFixed(2)}</div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 1rem;">Item</th>
+                                <th style="padding: 1rem;">Qty</th>
+                                <th style="padding: 1rem;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sales.map(s => `
+                                <tr>
+                                    <td style="padding: 1rem;">${s.itemName}</td>
+                                    <td style="padding: 1rem;">${s.quantity}</td>
+                                    <td style="padding: 1rem;">$${(s.price * s.quantity).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('pos-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.pos.add({
+                itemName: document.getElementById('pos-item').value,
+                price: parseFloat(document.getElementById('pos-price').value),
+                quantity: parseInt(document.getElementById('pos-qty').value),
+                date: new Date().toLocaleDateString()
+            });
+            this.renderPOS();
+        };
+    },
+
+    async renderExpenses() {
+        const expenses = await db.expenses.toArray();
+        const totalExp = expenses.reduce((acc, e) => acc + e.amount, 0);
+
+        this.container.innerHTML = `
+            <h1>Expenses Tracker</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="exp-form" class="glass-panel" style="margin: 0;">
+                    <h2>Record Expense</h2>
+                    <input type="text" id="ex-name" placeholder="Expense Name" required>
+                    <input type="number" id="ex-amount" placeholder="Amount" step="0.01" required>
+                    <select id="ex-cat">
+                        <option value="Operational">Operational</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Stationery">Stationery</option>
+                        <option value="Utilities">Utilities</option>
+                    </select>
+                    <button type="submit" class="btn-primary" style="width: 100%; background: var(--danger);">Log Expense</button>
+                </form>
+                <div class="glass-panel" style="margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2>Operational Costs</h2>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">$${totalExp.toFixed(2)}</div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 1rem;">Expense</th>
+                                <th style="padding: 1rem;">Category</th>
+                                <th style="padding: 1rem;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${expenses.map(e => `
+                                <tr>
+                                    <td style="padding: 1rem;">${e.name}</td>
+                                    <td style="padding: 1rem;">${e.category}</td>
+                                    <td style="padding: 1rem;">$${e.amount.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('exp-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.expenses.add({
+                name: document.getElementById('ex-name').value,
+                amount: parseFloat(document.getElementById('ex-amount').value),
+                category: document.getElementById('ex-cat').value,
+                date: new Date().toLocaleDateString()
+            });
+            this.renderExpenses();
+        };
+    },
+
+    async renderInventory() {
+        const assets = await db.assets.toArray();
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>School Assets & Inventory</h1>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn-primary" onclick="app.renderInventoryAudit()" style="background: var(--accent);">Inventory Audit Report</button>
+                    <button class="btn-primary" onclick="app.exportToCSV('assets')" style="background: var(--success);">Export Ledger (CSV)</button>
+                    <button class="btn-primary" onclick="app.showAssetForm()">Add New Asset</button>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 1rem;">Item Name</th>
+                            <th style="padding: 1rem;">Qty</th>
+                            <th style="padding: 1rem;">Current Value</th>
+                            <th style="padding: 1rem;">Condition</th>
+                            <th style="padding: 1rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${assets.map(a => {
+            const yearsElapsed = (new Date() - new Date(a.purchaseDate || new Date())) / (1000 * 60 * 60 * 24 * 365);
+            const currentValue = (a.value || 0) * Math.pow(0.9, Math.max(0, yearsElapsed));
+            return `
+                                    <tr style="border-bottom: 1px solid var(--glass-border);">
+                                        <td style="padding: 1rem; font-weight: 600;">${a.name}</td>
+                                        <td style="padding: 1rem;">${a.quantity}</td>
+                                        <td style="padding: 1rem;">$${currentValue.toFixed(2)}</td>
+                                        <td style="padding: 1rem;"><span class="status-pill" style="background: ${a.condition === 'Good' ? 'var(--success-glow)' : 'rgba(255,255,255,0.05)'}; color: ${a.condition === 'Good' ? 'var(--success)' : ''}">${a.condition}</span></td>
+                                        <td style="padding: 1rem;"><button onclick="app.deleteAsset(${a.id})" style="color: var(--danger); background:none; border:none; cursor:pointer;">Remove</button></td>
+                                    </tr>
+                                `;
+        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="asset-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; border: 1px solid var(--primary);">
+                    <h2 class="card-title">New Asset Registration</h2>
+                    <form id="asset-form">
+                        <input type="text" id="as-name" placeholder="Item Name" required>
+                        <input type="number" id="as-qty" placeholder="Quantity" required>
+                        <input type="number" id="as-val" placeholder="Value ($)" required>
+                        <select id="as-condition">
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Damaged">Damaged</option>
+                        </select>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                            <button type="submit" class="btn-primary">Add Asset</button>
+                            <button type="button" class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="document.getElementById('asset-modal').classList.add('hidden')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('asset-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.assets.add({
+                name: document.getElementById('as-name').value,
+                quantity: document.getElementById('as-qty').value,
+                value: parseFloat(document.getElementById('as-val').value),
+                purchaseDate: new Date().toISOString(),
+                condition: document.getElementById('as-condition').value
+            });
+            this.renderInventory();
+        };
+    },
+
+    showAssetForm() {
+        document.getElementById('asset-modal').classList.remove('hidden');
+    },
+
+    async deleteAsset(id) {
+        if (confirm('Remove item from inventory?')) {
+            await db.assets.delete(id);
+            this.renderInventory();
+        }
+    },
+
+    async renderDashboard() {
+        const studentCount = await db.students.count();
+        const totalFees = await db.fees.toArray();
+        const sumFees = totalFees.reduce((acc, f) => acc + parseFloat(f.amount), 0);
+
+        this.container.innerHTML = `
+            <div class="dashboard-grid">
+                <h1>Academic Dashboard</h1>
+                <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="stat-card glass-panel" style="margin:0; padding: 1.5rem;">
+                        <h3>Total Students</h3>
+                        <p style="font-size: 2rem; color: var(--primary-bright); font-weight: 700;">${studentCount}</p>
+                    </div>
+                    <div class="stat-card glass-panel" style="margin:0; padding: 1.5rem;">
+                        <h3>Fees Collected</h3>
+                        <p style="font-size: 2rem; color: var(--success); font-weight: 700;">$${sumFees.toFixed(2)}</p>
+                    </div>
+                </div>
+                <div class="glass-panel" style="margin:0;">
+                    <h2>Quick Actions</h2>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn-primary" onclick="app.navigate('students')">Register Student</button>
+                        <button class="btn-primary" style="background: var(--secondary);" onclick="app.navigate('exams')">Record Marks</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async renderStaff() {
+        const staffList = await db.staff.toArray();
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Staff Management</h1>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn-primary" onclick="app.exportToCSV('staff')" style="background: var(--success);">Export Staff (CSV)</button>
+                    <button class="btn-primary" onclick="app.showStaffForm()">Register Staff</button>
+                </div>
+            </div>
+            
+            <div class="glass-panel" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 1rem;">Staff ID</th>
+                            <th style="padding: 1rem;">Name</th>
+                            <th style="padding: 1rem;">Role</th>
+                            <th style="padding: 1rem;">Contact</th>
+                            <th style="padding: 1rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${staffList.map(s => `
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <td style="padding: 1rem;"><span style="color: var(--primary); font-weight: 600;">${s.staffId}</span></td>
+                                <td style="padding: 1rem;">${s.name}</td>
+                                <td style="padding: 1rem;"><span class="status-pill" style="background: var(--glass-bg); border: 1px solid var(--glass-border);">${s.role}</span></td>
+                                <td style="padding: 1rem; color: var(--text-muted);">${s.contact}</td>
+                                <td style="padding: 1rem;">
+                                    <button onclick="app.deleteStaff(${s.id})" style="color: var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">Remove</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="staff-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; border: 1px solid var(--primary);">
+                    <h2 class="card-title">New Staff Registration</h2>
+                    <form id="staff-form">
+                        <input type="text" id="st-name" placeholder="Full Name" required>
+                        <select id="st-role" required>
+                            <option value="Teacher">Teacher</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Bursar">Bursar</option>
+                            <option value="Support">Support Staff</option>
+                        </select>
+                        <input type="text" id="st-contact" placeholder="Contact Number" required>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                            <button type="submit" class="btn-primary">Register Staff</button>
+                            <button type="button" class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="document.getElementById('staff-modal').classList.add('hidden')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('staff-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const staff = {
+                staffId: 'ST-' + Math.floor(Math.random() * 9000 + 1000),
+                name: document.getElementById('st-name').value,
+                role: document.getElementById('st-role').value,
+                contact: document.getElementById('st-contact').value
+            };
+            await db.staff.add(staff);
+            this.renderStaff();
+        };
+    },
+
+    showStaffForm() {
+        document.getElementById('staff-modal').classList.remove('hidden');
+    },
+
+    async deleteStaff(id) {
+        if (confirm('Are you sure you want to remove this staff member?')) {
+            await db.staff.delete(id);
+            this.renderStaff();
+        }
+    },
+
+    async renderSubjects() {
+        const subjects = await db.subjects.toArray();
+        const teachers = await db.staff.where('role').equals('Teacher').toArray();
+
+        this.container.innerHTML = `
+            <h1>Subject Management</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="subj-form" class="glass-panel" style="margin: 0;">
+                    <h2>Define Subject</h2>
+                    <input type="text" id="subj-name" placeholder="Subject Name (e.g. Mathematics)" required>
+                    <input type="text" id="subj-class" placeholder="Class (e.g. Form 1)" required>
+                    <select id="subj-teacher" required>
+                        <option value="">Select Teacher</option>
+                        ${teachers.map(t => `<option value="${t.staffId}">${t.name}</option>`).join('')}
+                    </select>
+                    <button type="submit" class="btn-primary">Assign Subject</button>
+                </form>
+                <div class="glass-panel" style="margin: 0; overflow-x: auto;">
+                    <h2>Subject Allocations</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                                <th style="padding: 1rem;">Subject</th>
+                                <th style="padding: 1rem;">Class</th>
+                                <th style="padding: 1rem;">Teacher</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${subjects.map(s => `
+                                <tr style="border-bottom: 1px solid var(--glass-border);">
+                                    <td style="padding: 1rem;">${s.name}</td>
+                                    <td style="padding: 1rem;">${s.class}</td>
+                                    <td style="padding: 1rem;">${teachers.find(t => t.staffId === s.teacherId)?.name || s.teacherId}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('subj-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const subject = {
+                name: document.getElementById('subj-name').value,
+                class: document.getElementById('subj-class').value,
+                teacherId: document.getElementById('subj-teacher').value
+            };
+            await db.subjects.add(subject);
+            this.renderSubjects();
+        };
+    },
+
+    async renderStudents() {
+        const students = await db.students.toArray();
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Student Directory</h1>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn-primary" onclick="app.exportToCSV('students')" style="background: var(--success);">Export to CSV</button>
+                    <button class="btn-primary" onclick="app.showStudentForm()">Admit Student</button>
+                </div>
+            </div>
+            
+            <div class="glass-panel" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 1.25rem 1rem;">ID</th>
+                            <th style="padding: 1.25rem 1rem;">Name</th>
+                            <th style="padding: 1.25rem 1rem;">Class</th>
+                            <th style="padding: 1.25rem 1rem;">Contact</th>
+                            <th style="padding: 1.25rem 1rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => `
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--accent);">${s.studentId}</td>
+                                <td style="padding: 1.25rem 1rem;">${s.name}</td>
+                                <td style="padding: 1.25rem 1rem;"><span class="status-pill" style="background: rgba(255,255,255,0.05);">${s.class}</span></td>
+                                <td style="padding: 1.25rem 1rem; color: var(--text-muted);">${s.parentContact}</td>
+                                <td style="padding: 1.25rem 1rem; display: flex; gap: 0.75rem;">
+                                    <button onclick="app.viewIDCard('${s.id}')" style="color: var(--accent); background:none; border:none; cursor:pointer; font-weight:600;">ID Card</button>
+                                    <button onclick="app.deleteStudent(${s.id})" style="color: var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">Expel</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="student-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; border: 1px solid var(--primary);">
+                    <h2 class="card-title">Register New Student</h2>
+                    <form id="reg-form">
+                        <input type="text" id="s-name" placeholder="Full Name" required>
+                        <input type="text" id="s-class" placeholder="Class (e.g. Form 1A)" required>
+                        <select id="s-gender">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                        <input type="text" id="s-contact" placeholder="Parent/Guardian Contact" required>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                            <button type="submit" class="btn-primary">Register Student</button>
+                            <button type="button" class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="document.getElementById('student-modal').classList.add('hidden')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('reg-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const count = await db.students.count();
+            await db.students.add({
+                studentId: `EST${2026}${String(count + 1).padStart(3, '0')}`,
+                name: document.getElementById('s-name').value,
+                class: document.getElementById('s-class').value,
+                gender: document.getElementById('s-gender').value,
+                parentContact: document.getElementById('s-contact').value
+            });
+            this.renderStudents();
+        };
+    },
+
+    showStudentForm() {
+        document.getElementById('student-modal').classList.remove('hidden');
+    },
+
+    async deleteStudent(id) {
+        if (confirm('Are you sure you want to remove this student?')) {
+            await db.students.delete(id);
+            this.renderStudents();
+        }
+    },
+
+    async renderAttendance() {
+        const students = await db.students.toArray();
+        const today = new Date().toISOString().split('T')[0];
+
+        this.container.innerHTML = `
+            <h1>Attendance Management</h1>
+            <div class="glass-panel" style="margin: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>Record Daily Attendance</h2>
+                    <input type="date" id="att-date" value="${today}" style="width: auto; margin: 0;">
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 1rem;">Student Name</th>
+                            <th style="padding: 1rem;">Class</th>
+                            <th style="padding: 1rem;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="att-list">
+                        ${students.map(s => `
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <td style="padding: 1rem;">${s.name}</td>
+                                <td style="padding: 1rem;">${s.class}</td>
+                                <td style="padding: 1rem;">
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button class="btn-att" onclick="app.setAttendance('${s.studentId}', 'Present')" style="background: var(--success);">P</button>
+                                        <button class="btn-att" onclick="app.setAttendance('${s.studentId}', 'Absent')" style="background: var(--danger);">A</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <style>
+                .btn-att { border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-weight: 700; opacity: 0.7; transition: opacity 0.2s; }
+                .btn-att:hover { opacity: 1; }
+            </style>
+        `;
+    },
+
+    async setAttendance(studentId, status) {
+        const date = document.getElementById('att-date').value;
+        await db.attendance.put({ studentId, date, status });
+        alert(`${status} recorded for ${studentId}`);
+    },
+
+    async renderFees() {
+        const students = await db.students.toArray();
+        const fees = await db.fees.toArray();
+
+        const canEdit = this.canModify();
+        this.container.innerHTML = `
+            <h1>Fees ${canEdit ? 'Management' : 'Statement'}</h1>
+            <div style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+                ${canEdit ? `
+                <form id="fees-form" class="glass-panel" style="margin: 0;">
+                    <h2>Record Payment</h2>
+                    <select id="f-student" required>
+                        <option value="">Select Student</option>
+                        ${students.map(s => `<option value="${s.studentId}">${s.name} (${s.studentId})</option>`).join('')}
+                    </select>
+                    <input type="number" id="f-amount" placeholder="Amount ($)" required>
+                    <input type="text" id="f-type" placeholder="Payment Type (e.g. Tuition, Bus)">
+                    <button type="submit" class="btn-primary">Record Payment</button>
+                </form>` : ''}
+                <div class="glass-panel" style="margin: 0; overflow-x: auto;">
+                    <h2>Payment History</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                                <th style="padding: 1rem;">Student ID</th>
+                                <th style="padding: 1rem;">Amount</th>
+                                <th style="padding: 1rem;">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${fees.map(f => `
+                                <tr style="border-bottom: 1px solid var(--glass-border);">
+                                    <td style="padding: 1rem;">${f.studentId}</td>
+                                    <td style="padding: 1rem;">$${f.amount}</td>
+                                    <td style="padding: 1rem;">${f.date}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        if (canEdit) {
+            document.getElementById('fees-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const payment = {
+                    studentId: document.getElementById('f-student').value,
+                    amount: document.getElementById('f-amount').value,
+                    type: document.getElementById('f-type').value,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                await db.fees.add(payment);
+                alert('Payment recorded and SMS reminder simulated!');
+                this.renderFees();
+            };
+        }
+    },
+
+    async renderExams() {
+        const students = await db.students.toArray();
+        const marks = await db.marks.toArray();
+
+        const canEdit = this.canModify();
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Examination ${canEdit ? 'Management' : 'Results'}</h1>
+                ${canEdit ? `<button class="btn-primary" onclick="app.showReportSelector()" style="background: var(--accent); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);">Generate Report Cards</button>` : ''}
+            </div>
+            <div class="dashboard-grid" style="grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'};">
+                ${canEdit ? `
+                <div class="glass-panel">
+                    <h2 class="card-title">Enter Marks</h2>
+                    <form id="marks-form">
+                        <select id="m-student" required>
+                            <option value="">Select Student</option>
+                            ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
+                        </select>
+                        <input type="text" id="m-subject" placeholder="Subject" required>
+                        <input type="number" id="m-score" placeholder="Score (%)" max="100" required>
+                        <button type="submit" class="btn-primary" style="width: 100%; background: var(--secondary); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);">Assign Grade</button>
+                    </form>
+                </div>` : ''}
+                <div class="glass-panel" style="overflow-x: auto;">
+                    <h2 class="card-title">Student Performances</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Subject</th>
+                                <th>Score</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${marks.map(m => `
+                                <tr>
+                                    <td><span style="color: var(--primary); font-weight: 600;">${m.studentId}</span></td>
+                                    <td>${m.subject}</td>
+                                    <td style="font-weight: 700;">${m.score}%</td>
+                                    <td>
+                                        <span class="status-pill" style="background: ${m.score >= 50 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${m.score >= 50 ? 'var(--success)' : 'var(--danger)'}; border: 1px solid ${m.score >= 50 ? 'var(--success)' : 'var(--danger)'};">
+                                            ${this.calculateGrade(m.score)}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ${canEdit ? `
+            <div id="report-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; border: 1px solid var(--primary);">
+                    <h2 class="card-title" style="text-align: center;">Academic Reports</h2>
+                    <p style="text-align: center; margin-bottom: 2rem;">Select a student to generate their official achievement report.</p>
+                    <select id="report-student">
+                        ${students.map(s => `<option value="${s.studentId}">${s.name} (${s.studentId})</option>`).join('')}
+                    </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                        <button class="btn-primary" onclick="app.generateReport()">View Report</button>
+                        <button class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="document.getElementById('report-modal').classList.add('hidden')">Cancel</button>
+                    </div>
+                </div>
+            </div>` : ''}
+        `;
+
+        if (canEdit) {
+            document.getElementById('marks-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const mark = {
+                    studentId: document.getElementById('m-student').value,
+                    subject: document.getElementById('m-subject').value,
+                    score: parseInt(document.getElementById('m-score').value),
+                    year: 2026,
+                    term: 1
+                };
+                await db.marks.add(mark);
+                this.renderExams();
+            };
+        }
+    },
+
+    showReportSelector() {
+        document.getElementById('report-modal').classList.remove('hidden');
+    },
+
+    async generateReport() {
+        const studentId = document.getElementById('report-student').value;
+        const student = await db.students.where('studentId').equals(studentId).first();
+        const studentMarks = await db.marks.where('studentId').equals(studentId).toArray();
+
+        const avgScore = studentMarks.length > 0 ? (studentMarks.reduce((acc, m) => acc + m.score, 0) / studentMarks.length).toFixed(1) : 0;
+        const gpa = (avgScore / 20).toFixed(2); // Simple conversion to 5.0 scale
+
+        const reportContent = `
+            <div class="print-container" style="background: white; color: black; padding: 50px; border: 10px double #1e293b; min-height: 100vh; position: relative; font-family: 'Times New Roman', serif;">
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; color: rgba(0,0,0,0.03); z-index: 0; pointer-events: none; white-space: nowrap; font-weight: 900;">
+                    OFFICIAL RELEASE
+                </div>
+                
+                <div style="text-align: center; border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; position: relative; z-index: 1;">
+                    <div style="font-size: 2.5rem; font-weight: 900; letter-spacing: 2px; color: #1e293b;">EGLES SECONDARY SCHOOL</div>
+                    <p style="margin: 5px 0; font-size: 1.1rem; color: #64748b;">Motto: Excellence Through Discipline & Integrity</p>
+                    <p style="margin: 2px 0; font-size: 0.9rem;">P.O. Box 772, High Glen Road, Harare</p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 40px; position: relative; z-index: 1; border: 1px dashed #cbd5e1; padding: 15px;">
+                    <div>
+                        <p style="margin: 4px 0;"><strong>STUDENT NAME:</strong> ${student.name.toUpperCase()}</p>
+                        <p style="margin: 4px 0;"><strong>STUDENT ID:</strong> ${student.studentId}</p>
+                        <p style="margin: 4px 0;"><strong>CLASS/FORM:</strong> ${student.class}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 4px 0;"><strong>ACADEMIC YEAR:</strong> 2026</p>
+                        <p style="margin: 4px 0;"><strong>TERM NO:</strong> 1</p>
+                        <p style="margin: 4px 0;"><strong>ISSUE DATE:</strong> ${new Date().toLocaleDateString()}</p>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; position: relative; z-index: 1;">
+                    <thead>
+                        <tr style="background: #1e293b; color: white;">
+                            <th style="border: 1px solid #1e293b; padding: 12px; text-align: left;">Subject Area</th>
+                            <th style="border: 1px solid #1e293b; padding: 12px; text-align: center;">Score (%)</th>
+                            <th style="border: 1px solid #1e293b; padding: 12px; text-align: center;">Grade</th>
+                            <th style="border: 1px solid #1e293b; padding: 12px; text-align: left;">Teacher Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${studentMarks.map(m => `
+                            <tr>
+                                <td style="border: 1px solid #cbd5e1; padding: 12px;">${m.subject}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 12px; text-align: center;">${m.score}%</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 12px; text-align: center; font-weight: bold;">${this.calculateGrade(m.score)}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 12px; font-style: italic; color: #64748b;">${this.getSubjectRemark(m.score)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f8fafc; font-weight: bold;">
+                            <td style="border: 1px solid #cbd5e1; padding: 12px;">SUMMARY PERFORMANCE</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 12px; text-align: center;">${avgScore}%</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 12px; text-align: center;">GPA: ${gpa}</td>
+                            <td style="border: 1px solid #cbd5e1; padding: 12px;">Rank: Top 15%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div style="margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; position: relative; z-index: 1;">
+                    <div style="text-align: center;">
+                        <div style="border-bottom: 1px solid #000; height: 40px;"></div>
+                        <p style="margin-top: 5px; font-size: 0.9rem;">Class Teacher's Signature</p>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="border-bottom: 1px solid #000; height: 40px; display: flex; align-items: center; justify-content: center;">
+                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=40x40&data=${student.studentId}" style="width: 40px; border: 1px solid #000; opacity: 0.3;">
+                        </div>
+                        <p style="margin-top: 5px; font-size: 0.9rem;">Principal's Endorsement</p>
+                    </div>
+                </div>
+
+                <div id="report-actions" style="margin-top: 60px; border-top: 1px solid #cbd5e1; padding-top: 20px; display: flex; gap: 1rem; justify-content: center;">
+                    <button class="btn-primary" style="background: #1e293b; color: white;" onclick="window.print()">Print to PDF</button>
+                    <button class="btn-primary" style="background: var(--accent);" onclick="alert('SMS SENT: Academic report for ${student.name} is now available.')">Notify Parent</button>
+                    <button class="btn-primary" style="background: var(--danger);" onclick="app.navigate('exams')">Back to Exams</button>
+                </div>
+            </div>
+            <style>
+                @media print { 
+                    #report-actions { display: none; } 
+                    body { background: white !important; }
+                    .main-wrapper { margin-left: 0 !important; }
+                    .sidebar, .top-bar { display: none !important; }
+                    .content-area { padding: 0 !important; }
+                    .print-container { border: none !important; padding: 0 !important; }
+                }
+            </style>
+        `;
+
+        this.container.innerHTML = reportContent;
+        this.container.style.padding = '0';
+        this.container.style.background = 'white';
+    },
+
+    getSubjectRemark(score) {
+        if (score >= 80) return "Exceptional performance, continue standard.";
+        if (score >= 70) return "Strong grasp of concepts, well done.";
+        if (score >= 60) return "Satisfactory, can improve with effort.";
+        if (score >= 50) return "Borderline, needs consistent practice.";
+        return "Critical attention required in this subject.";
+    },
+
+    async renderDashboard() {
+        const studentCount = await db.students.count();
+        const totalFees = await db.fees.toArray();
+        const sumFees = totalFees.reduce((acc, f) => acc + parseFloat(f.amount), 0);
+        const staffCount = await db.staff.count();
+        const allMarks = await db.marks.toArray();
+
+        // Academic Stats for Chart
+        const subjectStats = {};
+        allMarks.forEach(m => {
+            if (!subjectStats[m.subject]) subjectStats[m.subject] = { total: 0, count: 0 };
+            subjectStats[m.subject].total += m.score;
+            subjectStats[m.subject].count++;
+        });
+        const subjectNames = Object.keys(subjectStats);
+        const subjectAvgs = subjectNames.map(name => (subjectStats[name].total / subjectStats[name].count).toFixed(1));
+
+        // Financial Stats for Chart (Last 6 months simulated)
+        const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+        const feeData = [sumFees * 0.1, sumFees * 0.15, sumFees * 0.2, sumFees * 0.1, sumFees * 0.25, sumFees * 0.2];
+        const expData = [sumFees * 0.05, sumFees * 0.08, sumFees * 0.1, sumFees * 0.07, sumFees * 0.12, sumFees * 0.15];
+
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                <div>
+                    <h1>Academic Insights</h1>
+                    <p>Welcome back, Administrator. Real-time metrics are active.</p>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn-primary" onclick="app.exportAllData()" style="background: var(--success);">Full System Backup</button>
+                    <button class="btn-primary" onclick="app.generateMinistryStats()" style="background: var(--secondary); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);">
+                        Ministry Statistics
+                    </button>
+                </div>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 15px; background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎓</div>
+                    <div>
+                        <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.25rem;">Total Enrollment</h3>
+                        <p style="font-size: 1.75rem; color: var(--primary); font-weight: 800;">${studentCount}</p>
+                    </div>
+                </div>
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 15px; background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">👨‍🏫</div>
+                    <div>
+                        <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.25rem;">Active Staff</h3>
+                        <p style="font-size: 1.75rem; color: var(--accent); font-weight: 800;">${staffCount}</p>
+                    </div>
+                </div>
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 15px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💰</div>
+                    <div>
+                        <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.25rem;">Total Revenue</h3>
+                        <p style="font-size: 1.75rem; color: var(--success); font-weight: 800;">$${sumFees.toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-main-grid">
+                <div class="glass-panel">
+                    <h2 class="card-title">Financial Trends</h2>
+                    <div class="chart-container">
+                        <canvas id="financeChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-panel">
+                    <h2 class="card-title">Academic Distribution</h2>
+                    <div class="chart-container">
+                        <canvas id="academicChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="margin-top: 1.5rem;">
+                <h2 class="card-title">Quick Actions</h2>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn-primary" onclick="app.navigate('students')">Admit Student</button>
+                    <button class="btn-primary" style="background: var(--secondary);" onclick="app.navigate('exams')">Record Marks</button>
+                    <button class="btn-primary" style="background: var(--accent);" onclick="app.navigate('staff')">Staff Directory</button>
+                    <button class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="app.navigate('fees')">Billing</button>
+                    <button class="btn-primary" style="background: var(--success);" onclick="app.exportAllData()">System Backup</button>
+                </div>
+            </div>
+        `;
+
+        this.initCharts(months, feeData, expData, subjectNames, subjectAvgs);
+    },
+
+    // --- Phase 3: Data Export & Auditing ---
+    async exportToCSV(tableName) {
+        const data = await db[tableName].toArray();
+        if (data.length === 0) {
+            alert("No data found in " + tableName);
+            return;
+        }
+
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(header => {
+                let cell = row[header] === null || row[header] === undefined ? '' : row[header].toString();
+                if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                    cell = `"${cell.replace(/"/g, '""')}"`;
+                }
+                return cell;
+            }).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `egles_smis_${tableName}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    },
+
+    async exportAllData() {
+        const tables = ['students', 'staff', 'fees', 'marks', 'discipline', 'assets', 'library'];
+        alert("Preparing full system backup. You will receive multiple CSV files.");
+        for (const table of tables) {
+            await this.exportToCSV(table);
+        }
+    },
+
+    async renderInventoryAudit() {
+        const assets = await db.assets.toArray();
+        const totalValue = assets.reduce((acc, a) => acc + (parseFloat(a.value) || 0), 0);
+
+        this.container.innerHTML = `
+            <div class="print-container" style="background: white; color: black; padding: 40px; min-height: 100vh; font-family: sans-serif;">
+                <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
+                    <div style="font-size: 2.5rem; font-weight: 900; color: #1e293b;">EGLES SECONDARY SCHOOL</div>
+                    <h2 style="margin: 10px 0;">Annual Asset & Inventory Audit Report</h2>
+                    <p>Report Period: Academic Year 2026 | Generated: ${new Date().toLocaleDateString()}</p>
+                </div>
+
+                <div style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div style="border: 2px solid #1e293b; padding: 15px; text-align: center;">
+                        <div style="font-size: 0.8rem; text-transform: uppercase;">Total Asset Count</div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">${assets.length}</div>
+                    </div>
+                    <div style="border: 2px solid #1e293b; padding: 15px; text-align: center;">
+                        <div style="font-size: 0.8rem; text-transform: uppercase;">Est. Total Value</div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">$${totalValue.toLocaleString()}</div>
+                    </div>
+                    <div style="border: 2px solid #1e293b; padding: 15px; text-align: center;">
+                        <div style="font-size: 0.8rem; text-transform: uppercase;">Audit Status</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #16a34a;">VERIFIED</div>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #e2e8f0;">
+                            <th style="border: 1px solid #000; padding: 10px; text-align: left;">Asset Name</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: center;">Qty</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: left;">Condition</th>
+                            <th style="border: 1px solid #000; padding: 10px; text-align: right;">Current Value ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${assets.map(a => `
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 10px;">${a.name}</td>
+                                <td style="border: 1px solid #000; padding: 10px; text-align: center;">${a.quantity}</td>
+                                <td style="border: 1px solid #000; padding: 10px;">${a.condition}</td>
+                                <td style="border: 1px solid #000; padding: 10px; text-align: right;">$${parseFloat(a.value || 0).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+                    <div style="text-align: center; border-top: 1px solid #000; width: 250px; padding-top: 10px;">Inventory Manager Signature</div>
+                    <div style="text-align: center; border-top: 1px solid #000; width: 250px; padding-top: 10px;">Official School Stamp</div>
+                </div>
+
+                <div id="audit-actions" style="margin-top: 40px; display: flex; gap: 1rem; justify-content: center;">
+                    <button class="btn-primary" style="background: #1e293b; color: white;" onclick="window.print()">Print Audit Summary</button>
+                    <button class="btn-primary" style="background: var(--success);" onclick="app.exportToCSV('assets')">Export Ledger</button>
+                    <button class="btn-primary" style="background: var(--danger);" onclick="app.navigate('inventory')">Close Audit</button>
+                </div>
+            </div>
+            <style>
+                @media print { 
+                    #audit-actions { display: none; }
+                    .main-wrapper { margin-left: 0 !important; }
+                    .sidebar, .top-bar { display: none !important; }
+                    .content-area { padding: 0 !important; }
+                }
+            </style>
+        `;
+        this.container.style.background = 'white';
+        this.container.style.padding = '0';
+    },
+
+    initCharts(months, feeData, expData, subjectNames, subjectAvgs) {
+        const ctxFinance = document.getElementById('financeChart').getContext('2d');
+        const ctxAcademic = document.getElementById('academicChart').getContext('2d');
+
+        new Chart(ctxFinance, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Fees Collected',
+                        data: feeData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, labels: { color: '#94a3b8' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        new Chart(ctxAcademic, {
+            type: 'bar',
+            data: {
+                labels: subjectNames,
+                datasets: [{
+                    label: 'Subject Average %',
+                    data: subjectAvgs,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+    },
+
+    async handleSearch(query) {
+        const resultsBox = document.getElementById('search-results');
+        if (!query || query.length < 1) {
+            resultsBox.classList.add('hidden');
+            return;
+        }
+
+        const students = await db.students.filter(s => s.name.toLowerCase().includes(query.toLowerCase()) || s.studentId.toLowerCase().includes(query.toLowerCase())).toArray();
+        const staff = await db.staff.filter(s => s.name.toLowerCase().includes(query.toLowerCase()) || s.staffId.toLowerCase().includes(query.toLowerCase())).toArray();
+        const assets = await db.assets.filter(a => a.name.toLowerCase().includes(query.toLowerCase())).toArray();
+
+        let html = '';
+        students.forEach(s => html += `
+            <div class="search-result-item" onclick="app.navigate('students'); resultsBox.classList.add('hidden');">
+                <span class="type-tag" style="background: var(--accent);">Student</span>
+                <div>
+                    <div>${s.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${s.studentId} - ${s.class}</div>
+                </div>
+            </div>
+        `);
+        staff.forEach(s => html += `
+            <div class="search-result-item" onclick="app.navigate('staff'); resultsBox.classList.add('hidden');">
+                <span class="type-tag" style="background: var(--primary);">Staff</span>
+                <div>
+                    <div>${s.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${s.staffId} - ${s.role}</div>
+                </div>
+            </div>
+        `);
+        assets.forEach(a => html += `
+            <div class="search-result-item" onclick="app.navigate('inventory'); resultsBox.classList.add('hidden');">
+                <span class="type-tag" style="background: var(--warning);">Asset</span>
+                <div>
+                    <div>${a.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${a.quantity} units - ${a.condition}</div>
+                </div>
+            </div>
+        `);
+
+        if (html === '') html = '<div class="search-result-item">No results found</div>';
+        resultsBox.innerHTML = html;
+        resultsBox.classList.remove('hidden');
+    },
+
+    async generateMinistryStats() {
+        const studentCount = await db.students.count();
+        const staffCount = await db.staff.count();
+        const femaleStudents = await db.students.where('gender').equals('Female').count();
+        const maleStudents = await db.students.where('gender').equals('Male').count();
+
+        const statsContent = `
+            <div style="background: #f8fafc; color: #1e293b; padding: 40px; border-radius: 12px; max-width: 800px; margin: 2rem auto;">
+                <h1 style="text-align: center; color: #0f172a;">Ministry of Primary and Secondary Education</h1>
+                <h2 style="text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 1rem;">Egles Secondary School - Statistics Report</h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                    <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 1rem 0; color: #64748b;">Enrollment Details</h3>
+                        <p><strong>Total Enrollment:</strong> ${studentCount}</p>
+                        <p><strong>Male Students:</strong> ${maleStudents}</p>
+                        <p><strong>Female Students:</strong> ${femaleStudents}</p>
+                    </div>
+                    <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 1rem 0; color: #64748b;">Staff Details</h3>
+                        <p><strong>Total Staff:</strong> ${staffCount}</p>
+                        <p><strong>Teacher-Student Ratio:</strong> 1:${Math.round(studentCount / (staffCount || 1))}</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 3rem; text-align: center;">
+                    <button class="btn-primary" onclick="window.print()">Print Official Statistics</button>
+                    <button class="btn-primary" style="background: var(--danger); margin-left: 10px;" onclick="app.navigate('dashboard')">Close Report</button>
+                </div>
+            </div>
+        `;
+
+        this.container.innerHTML = statsContent;
+    },
+
+    calculateGrade(score) {
+        if (score >= 80) return 'A';
+        if (score >= 70) return 'B';
+        if (score >= 60) return 'C';
+        if (score >= 50) return 'D';
+        return 'U';
+    },
+
+    async renderNotices() {
+        const notices = await db.notices.toArray();
+        const canEdit = this.canModify();
+        this.container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Digital Notice Board</h1>
+                ${canEdit ? `<button class="btn-primary" onclick="app.showNoticeForm()">Post Announcement</button>` : ''}
+            </div>
+
+            <div class="notice-grid" id="notice-grid">
+                ${notices.length === 0 ? '<p>No active notices.</p>' : notices.reverse().map(n => `
+                    <div class="notice-card" style="border-left: 4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}">
+                        <div class="priority-dot priority-${(n.priority || 'low').toLowerCase()}"></div>
+                        <h3 style="margin-bottom: 0.75rem; color: var(--text);">${n.title}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">${n.content}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
+                            <span>📅 ${n.date}</span>
+                            <span class="status-pill" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">${n.priority || 'Normal'}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            ${canEdit ? `
+            <div id="notice-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; border: 1px solid var(--primary);">
+                    <h2 class="card-title">New Announcement</h2>
+                    <form id="notice-form">
+                        <input type="text" id="n-title" placeholder="Notice Title" required>
+                        <textarea id="n-content" placeholder="Type your message here..." style="min-height: 150px;" required></textarea>
+                        <select id="n-priority">
+                            <option value="Low">Low Priority</option>
+                            <option value="Medium">Medium Priority</option>
+                            <option value="High">High Priority</option>
+                        </select>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                            <button type="submit" class="btn-primary">Post Notice</button>
+                            <button type="button" class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="document.getElementById('notice-modal').classList.add('hidden')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>` : ''}
+        `;
+
+        if (canEdit) {
+            document.getElementById('notice-form').onsubmit = async (e) => {
+                e.preventDefault();
+                await db.notices.add({
+                    title: document.getElementById('n-title').value,
+                    content: document.getElementById('n-content').value,
+                    priority: document.getElementById('n-priority').value,
+                    date: new Date().toLocaleDateString()
+                });
+                this.renderNotices();
+            };
+        }
+    },
+
+    showNoticeForm() {
+        document.getElementById('notice-modal').classList.remove('hidden');
+    },
+
+    async renderResources() {
+        this.container.innerHTML = `
+            <h1>System Resources & Portability</h1>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Data Portability (CSV Export)</h2>
+                    <p style="margin-bottom: 2rem;">Download your school data in CSV format for backup or external analysis.</p>
+                    <div style="display: grid; gap: 1rem;">
+                        <button class="btn-primary" onclick="app.exportToCSV('students')">Export Students</button>
+                        <button class="btn-primary" onclick="app.exportToCSV('fees')">Export Financials</button>
+                        <button class="btn-primary" onclick="app.exportToCSV('staff')">Export Staff</button>
+                        <button class="btn-primary" onclick="app.exportToCSV('inventory')">Export Inventory</button>
+                    </div>
+                </div>
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Learning Resource Hub</h2>
+                    <p style="margin-bottom: 1.5rem;">Storage for school syllabuses, digital notes, and circulars.</p>
+                    <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px; text-align: center; border: 2px dashed var(--glass-border);">
+                        <p>Document Upload (In Demo Mode)</p>
+                        <button class="btn-primary" style="background: var(--secondary); margin-top: 1rem;" onclick="alert('File storage module ready (IndexedDB Blob storage enabled). Select file to simulate upload.')">Simulate Upload</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async exportToCSV(table) {
+        const data = await db[table].toArray();
+        if (data.length === 0) return alert('No data to export.');
+
+        const headers = Object.keys(data[0]).join(',');
+        const rows = data.map(item => Object.values(item).map(v => `"${v}"`).join(','));
+        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows.join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `egles_${table}_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+    },
+
+    async renderHostels() {
+        const hostels = await db.hostels.toArray();
+        this.container.innerHTML = `
+            <h1>Hostel & Dormitory Management</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="hostel-form" class="glass-panel" style="margin: 0;">
+                    <h2>Register Hostel</h2>
+                    <input type="text" id="h-name" placeholder="Hostel Name" required>
+                    <input type="number" id="h-cap" placeholder="Capacity" required>
+                    <select id="h-gender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Create Hostel</button>
+                </form>
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Dormitory List</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 1rem;">Hostel</th>
+                                <th style="padding: 1rem;">Gender</th>
+                                <th style="padding: 1rem;">Capacity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${hostels.map(h => `
+                                <tr>
+                                    <td style="padding: 1rem;">${h.name}</td>
+                                    <td style="padding: 1rem;">${h.gender}</td>
+                                    <td style="padding: 1rem;">${h.capacity} Beds</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        document.getElementById('hostel-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.hostels.add({
+                name: document.getElementById('h-name').value,
+                capacity: parseInt(document.getElementById('h-cap').value),
+                gender: document.getElementById('h-gender').value
+            });
+            this.renderHostels();
+        };
+    },
+
+    checkPermission(page) {
+        if (!this.currentUser) return false;
+        const role = this.currentUser.role;
+        const matrix = {
+            'dashboard': ['Admin', 'Teacher', 'Parent', 'Student'],
+            'students': ['Admin', 'Teacher'],
+            'staff': ['Admin'],
+            'subjects': ['Admin', 'Teacher'],
+            'exams': ['Admin', 'Teacher', 'Parent', 'Student'],
+            'timetable': ['Admin', 'Teacher', 'Parent', 'Student'],
+            'attendance': ['Admin', 'Teacher'],
+            'library': ['Admin', 'Teacher', 'Parent', 'Student'],
+            'discipline': ['Admin', 'Teacher'],
+            'health': ['Admin', 'Teacher', 'Parent'],
+            'fees': ['Admin', 'Parent'],
+            'payroll': ['Admin'],
+            'inventory': ['Admin'],
+            'pos': ['Admin', 'Staff'],
+            'expenses': ['Admin'],
+            'hostels': ['Admin', 'Parent'],
+            'transport': ['Admin', 'Parent'],
+            'notices': ['Admin', 'Teacher', 'Parent', 'Student'],
+            'resources': ['Admin', 'Teacher', 'Parent', 'Student']
+        };
+        return (matrix[page] || []).includes(role);
+    },
+
+    async renderStaff() {
+        const staff = await db.staff.toArray();
+        this.container.innerHTML = `
+            <div class="glass-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>Staff Management</h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-primary" onclick="app.showProvisionModal()">Provision New Staff</button>
+                        <button class="btn-primary" style="background: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);" onclick="app.exportToCSV('staff')">Export Staff (CSV)</button>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="glass-panel" style="background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary);">
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Total Staff</div>
+                        <div style="font-size: 2rem; font-weight: 700;">${staff.length}</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="margin-top: 2rem; padding: 0; overflow: hidden;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Staff ID</th>
+                                <th>Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${staff.map(s => `
+                                <tr>
+                                    <td style="font-weight: 600;">${s.name}</td>
+                                    <td><span class="status-pill" style="background: var(--primary); color: white;">${s.role}</span></td>
+                                    <td style="font-family: monospace; color: var(--primary);">${s.staffId}</td>
+                                    <td>${s.contact}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    },
+
+    async renderTransport() {
+        const routes = await db.transport.toArray();
+        this.container.innerHTML = `
+            <h1>Transport & Bus Routes</h1>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+                <form id="route-form" class="glass-panel" style="margin: 0;">
+                    <h2>Add Route</h2>
+                    <input type="text" id="r-name" placeholder="Route Name" required>
+                    <input type="text" id="r-bus" placeholder="Bus Registration" required>
+                    <input type="text" id="r-driver" placeholder="Driver Name" required>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Save Route</button>
+                </form>
+                <div class="glass-panel" style="margin: 0;">
+                    <h2>Active Routes</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 1rem;">Route</th>
+                                <th style="padding: 1rem;">Bus</th>
+                                <th style="padding: 1rem;">Driver</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${routes.map(r => `
+                                <tr>
+                                    <td style="padding: 1rem;">${r.route}</td>
+                                    <td style="padding: 1rem;">${r.busNo}</td>
+                                    <td style="padding: 1rem;">${r.driver}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        document.getElementById('route-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.transport.add({
+                route: document.getElementById('r-name').value,
+                busNo: document.getElementById('r-bus').value,
+                driver: document.getElementById('r-driver').value
+            });
+            this.renderTransport();
+        };
+    },
+
+    async renderDiscipline() {
+        const students = await db.students.toArray();
+        const records = await db.discipline.toArray();
+        this.container.innerHTML = `
+            <h1>Disciplinary Management</h1>
+            <div class="dashboard-grid" style="grid-template-columns: 1fr 2fr;">
+                <div class="glass-panel">
+                    <h2 class="card-title">Record Infraction</h2>
+                    <form id="discipline-form">
+                        <select id="d-student" required>
+                            <option value="">Select Student</option>
+                            ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
+                        </select>
+                        <input type="text" id="d-infraction" placeholder="Infraction Type" required>
+                        <select id="d-severity">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <textarea id="d-action" placeholder="Action Taken" required></textarea>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Log Incident</button>
+                    </form>
+                </div>
+                <div class="glass-panel" style="overflow-x: auto;">
+                    <h2 class="card-title">Incident Logs</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Infraction</th>
+                                <th>Severity</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${records.reverse().map(r => `
+                                <tr>
+                                    <td><span style="color: var(--primary); font-weight: 600;">${r.studentId}</span></td>
+                                    <td>${r.infraction}</td>
+                                    <td><span class="status-pill" style="background: ${r.severity === 'High' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)'}; color: ${r.severity === 'High' ? 'var(--danger)' : 'var(--warning)'};">${r.severity}</span></td>
+                                    <td>${r.date}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('discipline-form').onsubmit = async (e) => {
+            e.preventDefault();
+            await db.discipline.add({
+                studentId: document.getElementById('d-student').value,
+                infraction: document.getElementById('d-infraction').value,
+                severity: document.getElementById('d-severity').value,
+                action: document.getElementById('d-action').value,
+                date: new Date().toLocaleDateString()
+            });
+            await this.checkSystemAlerts();
+            await this.updateNotifBadge();
+            this.renderDiscipline();
+        };
+    },
+
+    viewIDCard(id) {
+        db.students.get(parseInt(id)).then(student => {
+            this.container.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh;">
+                    <div class="glass-panel" style="width: 350px; height: 500px; display: flex; flex-direction: column; align-items: center; border: 2px solid var(--primary); background: var(--bg-gradient); padding: 0;">
+                        <div style="background: var(--primary); width: 100%; padding: 1.5rem; text-align: center; border-radius: 20px 20px 0 0;">
+                            <h2 style="margin: 0; font-size: 1.2rem; color: white;">EGLES SECONDARY SCHOOL</h2>
+                            <span style="font-size: 0.7rem; color: rgba(255,255,255,0.8);">Student Identification Card</span>
+                        </div>
+                        <div style="width: 150px; height: 150px; border-radius: 50%; background: var(--glass-bg); margin: 2rem 0; border: 4px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 4rem;">👤</div>
+                        <h2 style="margin-bottom: 0.5rem; color: white;">${student.name}</h2>
+                        <p style="color: var(--primary-bright); font-weight: 700;">STUDENT ID: ${student.studentId}</p>
+                        <p style="margin-top: 1rem; font-weight: 600; color: white;">CLASS: ${student.class}</p>
+                        <div style="margin-top: auto; padding: 1rem; width: 100%; text-align: center; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--glass-border);">
+                            Official School ID - Valid for 2026 Academic Year
+                        </div>
+                    </div>
+                    <button class="btn-primary" style="margin-top: 2rem;" onclick="window.print()">Print ID Card</button>
+                    <button class="btn-primary" style="background: var(--danger); margin-top: 1rem;" onclick="app.navigate('students')">Back to Registry</button>
+                </div>
+                <style>@media print { .btn-primary { display: none; } .glass-panel { margin: 0; box-shadow: none; border: 1px solid #000; } body { background: white; } }</style>
+            `;
+        });
+    }
+};
+
+app.init();

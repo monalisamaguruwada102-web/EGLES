@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Egles SMIS | Premium School Management</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">Egles <span>SMIS</span></div>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebar-nav">
+            <!-- Dynamically populated by app.js -->
+        </nav>
+
+        <div class="sidebar-footer">
+            <button id="theme-toggle" onclick="app.toggleTheme()"
+                style="background:var(--glass-bg); border:1px solid var(--glass-border); padding:0.5rem; border-radius:10px; cursor:pointer; color:var(--text); width:40px; height:40px;">🌓</button>
+            <div id="offline-indicator" class="status-pill hidden" style="background:var(--danger); color:white;">
+                Offline</div>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <header class="top-bar">
+            <div class="search-box">
+                <input type="text" id="global-search" placeholder="Search students, staff, or assets..."
+                    oninput="app.handleSearch(this.value)">
+                <div id="search-results" class="search-results-overlay hidden"></div>
+            </div>
+            <div class="user-profile" style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="notification-wrapper">
+                    <button class="notification-trigger" onclick="app.toggleNotifications()"
+                        style="background: none; border: none; font-size: 1.2rem; cursor: pointer; position: relative;">
+                        🔔<span id="notif-badge" class="notif-badge hidden"
+                            style="position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--bg-main);">0</span>
+                    </button>
+                    <div id="notification-panel" class="notification-panel hidden">
+                        <div class="notif-header">
+                            <h3 style="margin: 0; font-size: 1rem;">Notifications</h3>
+                            <button onclick="app.markAllAsRead()"
+                                style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem; font-weight: 600;">Clear
+                                All</button>
+                        </div>
+                        <div id="notif-list" class="notif-list">
+                            <p class="empty-notif"
+                                style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+                                No new notifications</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="theme-switcher" style="display: flex; gap: 0.5rem; margin-right: 1rem;">
+                    <div class="theme-chip" style="background: #0f172a;" title="Dark" onclick="app.setTheme('default')">
+                    </div>
+                    <div class="theme-chip" style="background: #f8fafc;" title="Light" onclick="app.setTheme('light')">
+                    </div>
+                    <div class="theme-chip" style="background: #020617;" title="Midnight"
+                        onclick="app.setTheme('midnight')"></div>
+                    <div class="theme-chip" style="background: #064e3b;" title="Aurora"
+                        onclick="app.setTheme('aurora')"></div>
+                    <div class="theme-chip" style="background: #451a03;" title="Sunset"
+                        onclick="app.setTheme('sunset')"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="text-align: right;">
+                        <span id="user-display-name" style="font-size: 0.9rem; font-weight: 600; display: block;">System
+                            Administrator</span>
+                        <a href="#" onclick="app.logout()"
+                            style="font-size: 0.7rem; color: var(--primary); text-decoration: none; font-weight: 600;">Sign
+                            Out</a>
+                    </div>
+                    <div id="user-avatar"
+                        style="width: 35px; height: 35px; border-radius: 10px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        A</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-area" id="app-container">
+            <div class="loader">
+                <div class="spinner"></div>
+                <p>Establishing Secure Session...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="app_v1.js"></script>
+    <!-- <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script> -->
+</body>
+
+</html>
