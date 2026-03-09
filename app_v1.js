@@ -57,51 +57,98 @@ const app = {
         document.querySelector('.top-bar').style.display = 'none';
         this.container.innerHTML = `
             <div id="public-portal" style="min-height:100vh; background: var(--bg-main);">
-                <!-- Hero -->
-                <div style="background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%); padding: 3rem 4rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:2rem;">
-                    <div>
-                        <div style="font-size:2.5rem; font-weight:800; color:white; letter-spacing:-1px;">Egles <span style="opacity:0.8;">SMIS</span></div>
-                        <div style="color:rgba(255,255,255,0.8); font-size:1.1rem; margin-top:0.5rem;">Secondary School Management & Information System</div>
-                        <div style="display:flex; gap:1rem; margin-top:2rem; flex-wrap:wrap;">
-                            <button onclick="app.showStaffLogin()" class="btn-primary" style="background:white; color:var(--primary); font-weight:700;">🔐 Staff / Admin Login</button>
-                            <button onclick="app.showStudentLogin()" class="btn-primary" style="background:rgba(255,255,255,0.15); border:2px solid white; color:white;">🎓 Student Portal</button>
+                
+                <!-- Premium Hero Section -->
+                <div style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99,102,241,0.15) 100%); padding: 4rem 2rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border);">
+                    <div style="position:absolute; top:-50px; right:-50px; font-size:15rem; opacity:0.03; pointer-events:none;">🏫</div>
+                    <div style="max-width:1200px; margin:0 auto; position:relative; z-index:10;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:3rem;">
+                            <div style="flex:1; min-width:300px;">
+                                <div style="display:inline-block; padding:0.4rem 1rem; background:var(--primary-glow); color:var(--primary-bright); border-radius:100px; font-size:0.8rem; font-weight:700; margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;">Official Gateway</div>
+                                <h1 style="font-size:3.5rem; font-weight:800; letter-spacing:-1.5px; line-height:1.1; margin-bottom:1rem; background:linear-gradient(to right, var(--text), var(--primary-bright)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Egles <span style="opacity:0.9;">SMIS</span></h1>
+                                <p style="color:var(--text-muted); font-size:1.15rem; max-width:500px; margin-bottom:2.5rem; line-height:1.6;">Secondary School Management & Information System. Access your academic records, stay updated with school notices, and view live statistics.</p>
+                                
+                                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                                    <button onclick="app.showStudentLogin()" class="btn-primary" style="font-size:1.05rem; padding:0.85rem 2rem; box-shadow:0 8px 25px var(--primary-glow); display:flex; align-items:center; gap:0.5rem;">
+                                        🎓 Student Portal
+                                    </button>
+                                    <button onclick="app.showStaffLogin()" class="btn-primary" style="font-size:1.05rem; padding:0.85rem 2rem; background:rgba(255,255,255,0.05); color:var(--text); box-shadow:none; border:1px solid var(--glass-border); display:flex; align-items:center; gap:0.5rem;">
+                                        🔐 Staff Login
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="desktop-only" style="flex:1; display:flex; justify-content:flex-end;">
+                                <div style="width:380px; height:380px; background:radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); border-radius:50%; display:flex; align-items:center; justify-content:center; animation: blobFloat 8s infinite alternate ease-in-out;">
+                                    <div style="font-size:9rem; filter:drop-shadow(0 20px 30px rgba(0,0,0,0.5)); transform:rotate(-5deg);">🎓</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div style="font-size:6rem;">🏫</div>
                 </div>
 
-                <!-- Live Stats -->
-                <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1.5rem; padding:2rem 4rem; background:var(--bg-card);">
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
-                        <div style="font-size:2rem; font-weight:800; color:var(--primary);" id="pub-students">—</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted);">Total Students</div>
+                <div style="max-width:1200px; margin:0 auto; padding:3rem 2rem;">
+                    
+                    <!-- Live Stats Grid -->
+                    <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; margin-bottom:3rem;">
+                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
+                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">👥</div>
+                            <div style="font-size:3rem; font-weight:800; color:var(--primary); line-height:1;" id="pub-students">—</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Enrolled Students</div>
+                        </div>
+                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
+                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">👨‍🏫</div>
+                            <div style="font-size:3rem; font-weight:800; color:var(--success); line-height:1;" id="pub-staff">—</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Teaching Staff</div>
+                        </div>
+                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
+                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">📚</div>
+                            <div style="font-size:3rem; font-weight:800; color:var(--accent); line-height:1;" id="pub-subjects">—</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Subjects Offered</div>
+                        </div>
+                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
+                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">📢</div>
+                            <div style="font-size:3rem; font-weight:800; color:var(--warning); line-height:1;" id="pub-notices">—</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Active Notices</div>
+                        </div>
                     </div>
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
-                        <div style="font-size:2rem; font-weight:800; color:var(--success);" id="pub-staff">—</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted);">Teaching Staff</div>
-                    </div>
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
-                        <div style="font-size:2rem; font-weight:800; color:var(--accent);" id="pub-subjects">—</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted);">Subjects Offered</div>
-                    </div>
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
-                        <div style="font-size:2rem; font-weight:800; color:var(--warning);" id="pub-notices">—</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted);">Active Notices</div>
-                    </div>
-                </div>
 
-                <!-- Notice Board -->
-                <div style="padding:2rem 4rem;">
-                    <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1.5rem;">📢 Public Notice Board</h2>
-                    <div id="pub-notices-list" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem;"></div>
-                </div>
+                    <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 2.5rem;" class="mobile-stack">
+                        
+                        <!-- Notice Board -->
+                        <div>
+                            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
+                                <div style="width:40px; height:40px; border-radius:12px; background:rgba(245, 158, 11, 0.15); color:var(--warning); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">📢</div>
+                                <h2 style="margin:0;">Notice Board</h2>
+                            </div>
+                            <div id="pub-notices-list" style="display:flex; flex-direction:column; gap:1rem;">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
 
-                <!-- Timetable (public) -->
-                <div style="padding:0 4rem 4rem;">
-                    <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1.5rem;">📅 General Timetable</h2>
-                    <div id="pub-timetable" class="glass-panel" style="overflow-x:auto;"></div>
+                        <!-- General Timetable -->
+                        <div>
+                            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
+                                <div style="width:40px; height:40px; border-radius:12px; background:rgba(99, 102, 241, 0.15); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">📅</div>
+                                <h2 style="margin:0;">General Timetable</h2>
+                            </div>
+                            <div class="glass-panel" style="margin:0; padding:0; overflow:hidden;">
+                                <div id="pub-timetable" style="overflow-x:auto;">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
+
+            <style>
+                @media (max-width: 900px) {
+                    .mobile-stack { grid-template-columns: 1fr !important; }
+                    #public-portal h1 { font-size: 2.5rem !important; }
+                }
+            </style>
         `;
         // Load public data
         this._loadPublicData();
@@ -115,26 +162,57 @@ const app = {
             db.notices.toArray(),
             db.timetable.toArray()
         ]);
-        const pubS = document.getElementById('pub-students');
-        if (pubS) pubS.textContent = students.length;
-        const pubStaff = document.getElementById('pub-staff');
-        if (pubStaff) pubStaff.textContent = staff.filter(s => s.role === 'Teacher').length;
-        const pubSubj = document.getElementById('pub-subjects');
-        if (pubSubj) pubSubj.textContent = subjects.length;
-        const pubN = document.getElementById('pub-notices');
-        if (pubN) pubN.textContent = notices.length;
+
+        // Counter animation logic
+        const animateValue = (id, start, end, duration) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (end === 0) { el.textContent = '0'; return; }
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Ease out cubic
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(easeProgress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    el.textContent = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        };
+
+        const staffCount = staff.filter(s => s.role === 'Teacher').length;
+
+        setTimeout(() => {
+            animateValue('pub-students', 0, students.length, 1500);
+            animateValue('pub-staff', 0, staffCount, 1500);
+            animateValue('pub-subjects', 0, subjects.length, 1500);
+            animateValue('pub-notices', 0, notices.length, 1500);
+        }, 100);
 
         // Notices
         const nl = document.getElementById('pub-notices-list');
         if (nl) {
             nl.innerHTML = notices.length === 0
-                ? '<p style="color:var(--text-muted);">No public notices at this time.</p>'
-                : notices.slice(-6).reverse().map(n => `
-                    <div class="glass-panel" style="margin:0; border-left:4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}">
-                        <div style="font-weight:700; margin-bottom:0.5rem;">${n.title}</div>
-                        <div style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">${n.content}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">📅 ${n.date}</div>
-                    </div>`).join('');
+                ? '<div class="glass-panel" style="text-align:center; padding:3rem 2rem;"><div style="font-size:3rem; opacity:0.5; margin-bottom:1rem;">📭</div><p style="color:var(--text-muted); margin:0;">No public announcements at this time.</p></div>'
+                : notices.slice(-5).reverse().map(n => {
+                    const color = n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)';
+                    const bg = n.priority === 'High' ? 'rgba(239, 68, 68, 0.05)' : n.priority === 'Medium' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(16, 185, 129, 0.05)';
+                    return `
+                    <div style="background:var(--bg-card); border:1px solid var(--glass-border); border-left:4px solid ${color}; border-radius:16px; padding:1.5rem; transition:transform 0.2s, box-shadow 0.2s; cursor:default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
+                            <div style="font-weight:700; font-size:1.1rem; color:var(--text); line-height:1.3; padding-right:1rem;">${n.title}</div>
+                            <span style="background:${bg}; color:${color}; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; white-space:nowrap;">${n.priority}</span>
+                        </div>
+                        <div style="font-size:0.95rem; color:var(--text-muted); margin-bottom:1.25rem; line-height:1.6;">${n.content}</div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; color:var(--text-muted); opacity:0.8;">
+                            <span>📅</span> ${n.date}
+                        </div>
+                    </div>`
+                }).join('');
         }
 
         // Timetable
@@ -143,17 +221,28 @@ const app = {
         const tt = document.getElementById('pub-timetable');
         if (tt) {
             if (timetable.length === 0) {
-                tt.innerHTML = '<p style="padding:2rem; color:var(--text-muted);">No timetable data available yet.</p>';
+                tt.innerHTML = '<div style="padding:4rem 2rem; text-align:center;"><div style="font-size:3rem; opacity:0.5; margin-bottom:1rem;">🗓️</div><p style="color:var(--text-muted); margin:0;">The master timetable has not been published yet.</p></div>';
             } else {
-                tt.innerHTML = `<table style="width:100%; border-collapse:collapse;">
-                    <thead><tr>
-                        <th style="padding:0.75rem; border:1px solid var(--glass-border);">Period</th>
-                        ${days.map(d => `<th style="padding:0.75rem; border:1px solid var(--glass-border);">${d}</th>`).join('')}
+                tt.innerHTML = `<table style="width:100%; border-collapse:collapse; min-width:600px;">
+                    <thead><tr style="background:rgba(255,255,255,0.02);">
+                        <th style="padding:1.25rem 1rem; border-bottom:1px solid var(--glass-border); color:var(--text); font-weight:700; font-size:0.85rem;">PERIOD</th>
+                        ${days.map(d => `<th style="padding:1.25rem 1rem; border-bottom:1px solid var(--glass-border); color:var(--text); font-weight:700; font-size:0.85rem;">${d.toUpperCase()}</th>`).join('')}
                     </tr></thead>
                     <tbody>
-                        ${periods.map(p => `<tr>
-                            <td style="padding:0.75rem; border:1px solid var(--glass-border); font-weight:600; white-space:nowrap;">${p}</td>
-                            ${days.map(d => { const e = timetable.find(s => s.day === d && s.period === p); return `<td style="padding:0.75rem; border:1px solid var(--glass-border); background:${e ? 'var(--glass-bg)' : ''}">${e ? `<strong>${e.subject}</strong><br><small style="color:var(--text-muted)">${e.class}</small>` : '-'}</td>`; }).join('')}
+                        ${periods.map((p, i) => `<tr style="${i % 2 === 0 ? 'background:rgba(255,255,255,0.01);' : ''}">
+                            <td style="padding:1rem; border-bottom:1px solid var(--glass-border); font-weight:600; color:var(--primary-bright); font-family:monospace; font-size:0.95rem;">${p}</td>
+                            ${days.map(d => {
+                    const e = timetable.find(s => s.day === d && s.period === p);
+                    return `<td style="padding:1rem; border-bottom:1px solid var(--glass-border); vertical-align:top;">
+                                    ${e ? `<div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:0.75rem; border-radius:10px;">
+                                        <strong style="display:block; color:var(--text); margin-bottom:0.25rem; font-size:0.95rem;">${e.subject}</strong>
+                                        <div style="color:var(--text-muted); font-size:0.8rem; display:flex; justify-content:space-between; align-items:center;">
+                                            <span>${e.class}</span>
+                                            <span style="opacity:0.5;">●</span>
+                                        </div>
+                                    </div>` : '<div style="color:var(--text-muted); opacity:0.3; text-align:center; padding:1rem;">-</div>'}
+                                </td>`;
+                }).join('')}
                         </tr>`).join('')}
                     </tbody>
                 </table>`;
