@@ -556,17 +556,31 @@ const app = {
         document.querySelector('.sidebar').style.display = 'none';
         document.querySelector('.top-bar').style.display = 'none';
         const user = this.currentUser;
-        const [marks, fees, notices, attendance, subjects, staff] = await Promise.all([
+        const [marks, fees, notices, attendance, subjects, staff, library, health, discipline, hostels, hostelAssignments, transport, transportAssignments] = await Promise.all([
             db.marks.toArray(),
             db.fees.toArray(),
             db.notices.toArray(),
             db.attendance.toArray(),
             db.subjects.toArray(),
-            db.staff.toArray()
+            db.staff.toArray(),
+            db.library.toArray(),
+            db.health.toArray(),
+            db.discipline.toArray(),
+            db.hostels.toArray(),
+            db.hostelAssignments.toArray(),
+            db.transport.toArray(),
+            db.transportAssignments.toArray()
         ]);
         const myMarks = marks.filter(m => m.studentId === user.studentId);
         const myFees = fees.filter(f => f.studentId === user.studentId);
         const myAttendance = attendance.filter(a => a.studentId === user.studentId);
+        const myLoans = (db.bookLoans ? await db.bookLoans.toArray() : []).filter(l => l.studentId === user.studentId);
+        const myHealth = health.filter(h => h.studentId === user.studentId);
+        const myDiscipline = discipline.filter(d => d.studentId === user.studentId);
+        const myHostelAssigned = hostelAssignments.find(ha => ha.studentId === user.studentId);
+        const myHostel = myHostelAssigned ? hostels.find(h => h.id === myHostelAssigned.hostelId) : null;
+        const myTransportAssigned = transportAssignments.find(ta => ta.studentId === user.studentId);
+        const myTransport = myTransportAssigned ? transport.find(t => t.id === myTransportAssigned.routeId) : null;
         const totalPaid = myFees.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
         const presentDays = myAttendance.filter(a => a.status === 'Present').length;
         const attendancePct = myAttendance.length ? Math.round((presentDays / myAttendance.length) * 100) : 0;
@@ -584,113 +598,176 @@ const app = {
         this.container.innerHTML = `
             <div style="padding:1rem; max-width:1200px; margin:0 auto; padding-top:2rem;">
                 
-                <!-- Premium Header -->
-                <div class="glass-panel" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.5rem; background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.1)); border-left: 4px solid var(--primary); padding:2rem;">
-                    <div style="display:flex; align-items:center; gap:1.5rem;">
-                        <div style="width: 70px; height: 70px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; box-shadow: 0 4px 15px var(--primary-glow);">
-                            ${user.name.charAt(0).toUpperCase()}
+                <!-- Premium Student Identity Card -->
+                <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.05)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 2.5rem; display: flex; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px; padding: 2.5rem; display: flex; gap: 2rem; align-items: center;">
+                        <div style="position: relative;">
+                            <div style="width: 120px; height: 120px; border-radius: 24px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 800; box-shadow: 0 10px 25px var(--primary-glow); border: 4px solid var(--bg-card);">
+                                ${user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div style="position: absolute; bottom: -5px; right: -5px; width: 32px; height: 32px; background: var(--success); border-radius: 50%; border: 3px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">✔️</div>
                         </div>
                         <div>
-                            <div style="font-size:0.85rem; color:var(--primary-bright); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Student Dashboard</div>
-                            <h1 style="margin:0; font-size:2rem;">${user.name}</h1>
-                            <div style="color:var(--text-muted); font-family:monospace; margin-top:0.25rem;">ID: ${user.studentId}</div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <span style="background: var(--primary-glow); color: var(--primary-bright); padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Verified Student</span>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Class of ${new Date().getFullYear() + 2}</span>
+                            </div>
+                            <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">${user.name}</h1>
+                            <div style="display: flex; gap: 1.5rem; margin-top: 0.75rem; color: var(--text-muted); font-size: 1rem;">
+                                <span><strong>ID:</strong> ${user.studentId}</span>
+                                <span><strong>Current:</strong> Grade 11-A</span>
+                            </div>
                         </div>
                     </div>
-                    <button onclick="app.logout()" class="btn-primary" style="background:var(--danger); box-shadow:0 4px 15px rgba(239, 68, 68, 0.4);">Secure Sign Out</button>
-                </div>
-
-                <!-- Live Metrics -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.25rem; margin-bottom:2rem;">
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem; position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:-10px; right:-10px; font-size:4rem; opacity:0.05;">📊</div>
-                        <div style="font-size:2.5rem; font-weight:800; color:var(--primary);">${myMarks.length}</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.5rem;">Results</div>
-                    </div>
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem; position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:-10px; right:-10px; font-size:4rem; opacity:0.05;">💲</div>
-                        <div style="font-size:2.5rem; font-weight:800; color:var(--success);">$${totalPaid.toFixed(2)}</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.5rem;">Fees Cleared</div>
-                    </div>
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem; position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:-10px; right:-10px; font-size:4rem; opacity:0.05;">📅</div>
-                        <div style="font-size:2.5rem; font-weight:800; color:var(--accent);">${attendancePct}%</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.5rem;">Attendance</div>
-                    </div>
-                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem; position:relative; overflow:hidden;">
-                        <div style="position:absolute; top:-10px; right:-10px; font-size:4rem; opacity:0.05;">📚</div>
-                        <div style="font-size:2.5rem; font-weight:800; color:var(--warning);">${Object.keys(subjectMap).length}</div>
-                        <div style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.5rem;">Enrolled Subjects</div>
+                    <div style="width: 250px; background: rgba(255,255,255,0.02); border-left: 1px solid var(--glass-border); padding: 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                        <div style="width: 130px; height: 130px; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${user.studentId}" alt="Student QR" style="width: 100%;">
+                        </div>
+                        <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Access Token V.2.0</div>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+                <!-- Strategic Performance & Info Grid -->
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 2.5rem;" class="mobile-stack">
                     
-                    <!-- Left Column: Results & Staff -->
-                    <div style="display:flex; flex-direction:column; gap:2rem;">
+                    <div style="display:flex; flex-direction:column; gap:2.5rem;">
                         
+                        <!-- MULTIFACETED: Life at Campus Section -->
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🏠</div>
+                                <h2 style="margin: 0; font-size: 1.6rem;">Life at Campus</h2>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                                
+                                <!-- Hostel Card -->
+                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; position: relative; overflow: hidden; border-radius: 20px;">
+                                    <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem;">🏢 Accommodation</h4>
+                                    ${myHostel ? `
+                                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text);">${myHostel.name}</div>
+                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Room: ${myHostelAssigned.roomNo || 'TBD'}</div>
+                                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); font-size: 0.8rem; color: var(--text-muted);">Status: <span style="color: var(--success); font-weight: 700;">Resident</span></div>
+                                    ` : `
+                                        <div style="color: var(--text-muted); font-size: 0.9rem;">No active hostel assignment.</div>
+                                        <button class="btn-primary" style="margin-top: 1rem; width: 100%; font-size: 0.8rem; padding: 0.5rem;">Request Housing</button>
+                                    `}
+                                </div>
+
+                                <!-- Library Status -->
+                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
+                                    <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem;">📚 Resource Center</h4>
+                                    <div style="font-size: 1.2rem; font-weight: 700;">${myLoans.length} Books Loaned</div>
+                                    <div style="font-size: 0.9rem; color: ${myLoans.some(l => l.isOverdue) ? 'var(--danger)' : 'var(--text-muted)'}; margin-top: 0.25rem;">
+                                        ${myLoans.some(l => l.isOverdue) ? '⚠️ 1 Overdue item' : 'All returns on time'}
+                                    </div>
+                                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                        <div style="flex: 1; height: 4px; background: var(--success); border-radius: 2px;"></div>
+                                        <div style="flex: 1; height: 4px; background: var(--glass-border); border-radius: 2px;"></div>
+                                        <div style="flex: 1; height: 4px; background: var(--glass-border); border-radius: 2px;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Transport Card -->
+                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
+                                    <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">🚌 Mobility</h4>
+                                    ${myTransport ? `
+                                        <div style="font-size: 1.2rem; font-weight: 700;">${myTransport.routeName}</div>
+                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Pickup: ${myTransport.pickupTime}</div>
+                                        <div style="margin-top: 1rem; font-size: 0.8rem; font-weight: 600; color: var(--success);">• Live: On Route</div>
+                                    ` : `
+                                        <div style="color: var(--text-muted); font-size: 0.9rem;">Private Transport</div>
+                                        <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">Parking Permit: <span style="color: var(--text);">EGL-993</span></div>
+                                    `}
+                                </div>
+
+                                <!-- Behavior & Health -->
+                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
+                                    <div style="display: flex; gap: 1rem; height: 100%;">
+                                        <div style="flex: 1; border-right: 1px solid var(--glass-border); padding-right: 1rem;">
+                                            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Health</h4>
+                                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--success);">Fit</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Last: 12 Jan</div>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Discipline</h4>
+                                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--warning);">${myDiscipline.length > 0 ? 'Review' : 'Perfect'}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${myDiscipline.length} Records</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Academic Results -->
-                        <div class="glass-panel" style="margin:0; overflow-x:auto;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                                <h2 style="margin:0;">📝 Academic Performance</h2>
-                                <span style="background:var(--primary-glow); color:var(--primary-bright); padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:700;">Official Record</span>
+                        <div class="glass-panel" style="margin:0; overflow-x:auto; border-radius: 24px; padding: 2rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                                <h3 style="margin:0; font-size: 1.5rem;">📝 Academic Records</h3>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--glass-border);">Print Transcript</button>
+                                    <span style="background:var(--primary-glow); color:var(--primary-bright); padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:800; text-transform: uppercase;">Live Sync</span>
+                                </div>
                             </div>
                             ${Object.keys(subjectMap).length === 0
-                ? '<div style="padding:2rem; text-align:center; background:rgba(0,0,0,0.1); border-radius:12px;"><p>No examination results published yet.</p></div>'
-                : `<table style="width:100%; border-collapse:collapse; min-width:500px;">
-                                    <thead><tr style="text-align:left; border-bottom:2px solid var(--glass-border);">
-                                        <th style="padding:1rem;">Subject</th>
-                                        <th style="padding:1rem;">Term</th>
-                                        <th style="padding:1rem;">Score (%)</th>
-                                        <th style="padding:1rem;">Grade</th>
+                ? '<div style="padding:4rem; text-align:center;"><p style="color:var(--text-muted);">Examination results pending upload.</p></div>'
+                : `<table style="width:100%; border-collapse:separate; border-spacing: 0 1rem; min-width:600px;">
+                                    <thead><tr style="text-align:left; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                                        <th style="padding:0 1rem;">Subject</th>
+                                        <th style="padding:0 1rem;">Term Info</th>
+                                        <th style="padding:0 1rem;">Performance</th>
+                                        <th style="padding:0 1rem;">Letter Grade</th>
                                     </tr></thead>
                                     <tbody>
-                                        ${myMarks.map(m => `<tr style="transition:all 0.2s;">
-                                            <td style="padding:1rem; font-weight:600; font-size:1.05rem;">${m.subject}</td>
-                                            <td style="padding:1rem; color:var(--text-muted);">${m.term} (Year ${m.year})</td>
-                                            <td style="padding:1rem;">
-                                                <div style="display:flex; align-items:center; gap:1rem;">
-                                                    <div style="flex:1; height:8px; background:rgba(255,255,255,0.05); border-radius:4px; max-width:120px; overflow:hidden;">
-                                                        <div style="height:100%; border-radius:4px; background:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; width:${m.score}%; box-shadow:0 0 10px ${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'};"></div>
+                                        ${myMarks.map(m => `
+                                            <tr style="background: rgba(255,255,255,0.02); border-radius: 12px;">
+                                                <td style="padding:1.25rem 1rem; font-weight:700; font-size:1.1rem; border-radius: 12px 0 0 12px;">${m.subject}</td>
+                                                <td style="padding:1.25rem 1rem; color:var(--text-muted); font-size: 0.95rem;">${m.term} &bull; ${m.year}</td>
+                                                <td style="padding:1.25rem 1rem;">
+                                                    <div style="display:flex; align-items:center; gap:1rem;">
+                                                        <div style="flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:100px; max-width:120px; overflow:hidden;">
+                                                            <div style="height:100%; border-radius:100px; background:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; width:${m.score}%; box-shadow:0 0 15px ${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'};"></div>
+                                                        </div>
+                                                        <span style="font-weight:800; font-family: monospace;">${m.score}%</span>
                                                     </div>
-                                                    <span style="font-weight:700;">${m.score}</span>
-                                                </div>
-                                            </td>
-                                            <td style="padding:1rem;">
-                                                <span class="status-pill" style="font-size:0.9rem; padding:6px 16px; background:${m.score >= 80 ? 'rgba(16,185,129,0.15)' : m.score >= 60 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'}; color:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; border:1px solid ${m.score >= 80 ? 'rgba(16,185,129,0.3)' : m.score >= 60 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'};">${this.calculateGrade(m.score)}</span>
-                                            </td>
-                                        </tr>`).join('')}
+                                                </td>
+                                                <td style="padding:1.25rem 1rem; border-radius: 0 12px 12px 0;">
+                                                    <span style="display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; border-radius: 50%; font-weight: 900; background:${m.score >= 80 ? 'rgba(16,185,129,0.1)' : m.score >= 60 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'}; color:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; border: 1px solid ${m.score >= 80 ? 'rgba(16,185,129,0.2)' : m.score >= 60 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'};">
+                                                        ${this.calculateGrade(m.score)}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
                                     </tbody>
                                 </table>`
             }
                         </div>
 
-                        <!-- Teaching Staff & Subjects Directory -->
-                        <div class="glass-panel" style="margin:0;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                                <h2 style="margin:0;">👨‍🏫 Department Faculty</h2>
-                                <span style="font-size:0.85rem; color:var(--text-muted);">Current Teaching Staff</span>
-                            </div>
+                        <!-- ENHANCED Faculty Directory -->
+                        <div class="glass-panel" style="margin:0; border-radius: 24px; padding: 2rem;">
+                            <h3 style="margin:0 0 2rem 0; font-size: 1.5rem;">👨‍🏫 Department Faculty</h3>
                             ${teachersMap.length === 0
-                ? '<p>Faculty details are not available yet.</p>'
-                : `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem;">
+                ? '<p style="color:var(--text-muted);">Faculty profiles loading...</p>'
+                : `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1.5rem;">
                                     ${teachersMap.map(t => {
                     const teacherSubjects = subjects.filter(s => s.teacherId === t.staffId);
                     return `
-                                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); padding:1.25rem; border-radius:12px; display:flex; gap:1rem; align-items:flex-start;">
-                                            <div style="width:45px; height:45px; border-radius:12px; background:var(--glass-bg); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
-                                                👔
-                                            </div>
-                                            <div>
-                                                <div style="font-weight:700; color:var(--text); font-size:1.05rem; margin-bottom:0.25rem;">${t.name}</div>
-                                                <div style="color:var(--primary-bright); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.75rem;">${t.role}</div>
-                                                <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
-                                                    ${teacherSubjects.length > 0
-                            ? teacherSubjects.map(ts => `<span style="background:rgba(255,255,255,0.1); color:white; padding:3px 8px; border-radius:4px; font-size:0.75rem;">${ts.name} (${ts.class})</span>`).join('')
-                            : `<span style="color:var(--text-muted); font-size:0.8rem;">No subjects assigned</span>`
+                                            <div class="faculty-card" onclick="app.showFacultyProfile('${t.staffId}')" style="background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:1.5rem; border-radius:20px; transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.background='rgba(255,255,255,0.05)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.transform='translateY(0)'">
+                                                <div style="display:flex; gap:1.25rem; align-items:flex-start;">
+                                                    <div style="width:64px; height:64px; border-radius:20px; background: var(--bg-card); border: 1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-size:1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                                                        ${t.role === 'Admin' ? '🤵' : '👨‍🏫'}
+                                                    </div>
+                                                    <div>
+                                                        <div style="font-weight:800; color:var(--text); font-size:1.15rem; margin-bottom:0.25rem;">${t.name}</div>
+                                                        <div style="color:var(--primary-bright); font-size:0.8rem; text-transform:uppercase; font-weight: 700; letter-spacing:1px; margin-bottom:1rem;">Senior Faculty &bull; ${t.role}</div>
+                                                        <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                                                            ${teacherSubjects.length > 0
+                            ? teacherSubjects.map(ts => `<span style="background:var(--primary-glow); color:var(--primary-bright); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight: 700; border: 1px solid rgba(99,102,241,0.2);">${ts.name}</span>`).join('')
+                            : `<span style="color:var(--text-muted); font-size:0.8rem;">General Administration</span>`
                         }
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>`
+                                            </div>`
                 }).join('')}
                                 </div>`
             }
@@ -698,44 +775,45 @@ const app = {
 
                     </div>
 
-                    <!-- Right Column: Fees & Notices -->
-                    <div style="display:flex; flex-direction:column; gap:2rem;">
+                    <!-- Right Column: Live Metrics, Fees & Notices -->
+                    <div style="display:flex; flex-direction:column; gap:2.5rem;">
                         
-                        <!-- Fee Statement -->
-                        <div class="glass-panel" style="margin:0;">
-                            <h2 style="margin-bottom:1.5rem;">💳 Financial Statement</h2>
+                        <!-- Financial Overview Card -->
+                        <div class="glass-panel" style="margin:0; border-radius: 24px; padding: 2rem; background: linear-gradient(180deg, var(--bg-card), rgba(16,185,129,0.03));">
+                            <h3 style="margin-bottom:1.5rem; display: flex; align-items: center; gap: 0.5rem;">💳 Fee Statement</h3>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Balance Remaining</div>
+                                <div style="font-size: 2.5rem; font-weight: 900; color: var(--success);">$0.00</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No upcoming installments.</div>
+                            </div>
                             ${myFees.length === 0
-                ? '<div style="padding:1.5rem; text-align:center; background:rgba(16,185,129,0.05); border:1px dashed var(--success); border-radius:12px;"><span style="font-size:2rem; display:block; margin-bottom:0.5rem;">✅</span><p style="color:var(--success); font-weight:600;">No outstanding payments.</p></div>'
-                : `<div style="overflow-x:auto;">
-                                    <table style="width:100%; border-collapse:collapse; min-width:300px;">
-                                    <thead><tr style="text-align:left; border-bottom:1px solid var(--glass-border);">
-                                        <th style="padding:0.75rem;">Details</th>
-                                        <th style="padding:0.75rem; text-align:right;">Amount</th>
-                                    </tr></thead>
-                                    <tbody>
-                                        ${myFees.map(f => `<tr style="border-bottom:1px dashed rgba(255,255,255,0.05);">
-                                            <td style="padding:0.75rem;">
-                                                <div style="font-weight:600;">${f.type}</div>
-                                                <div style="font-size:0.75rem; color:var(--text-muted);">${f.date}</div>
-                                            </td>
-                                            <td style="padding:0.75rem; text-align:right; color:var(--success); font-weight:700;">$${parseFloat(f.amount).toFixed(2)}</td>
-                                        </tr>`).join('')}
-                                    </tbody></table>
+                ? '<div style="text-align:center; padding: 1rem;"><div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎉</div><p style="color: var(--success); font-weight: 600; font-size: 0.9rem;">Excellent! Your account is fully settled.</p></div>'
+                : `<div style="max-height: 400px; overflow-y: auto;">
+                                    ${myFees.map(f => `
+                                        <div style="padding: 1rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <div style="font-weight: 700; font-size: 0.95rem;">${f.type}</div>
+                                                <div style="font-size: 0.75rem; color: var(--text-muted);">${f.date}</div>
+                                            </div>
+                                            <div style="font-weight: 800; color: var(--success);">$${parseFloat(f.amount).toFixed(2)}</div>
+                                        </div>
+                                    `).join('')}
                                 </div>`
             }
+                            <button class="btn-primary" style="width: 100%; margin-top: 1.5rem; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--glass-border);">View Full Receipt History</button>
                         </div>
 
-                        <!-- Notices -->
-                        <div class="glass-panel" style="margin:0;">
-                            <h2 style="margin-bottom:1.5rem;">📢 School Bulletins</h2>
+                        <!-- Notices Card -->
+                        <div class="glass-panel" style="margin:0; border-radius: 24px; padding: 2rem;">
+                            <h3 style="margin-bottom:1.5rem; display: flex; align-items: center; gap: 0.5rem;">📢 School Bulletins</h3>
                             ${notices.length === 0
-                ? '<p style="color:var(--text-muted);">No recent announcements.</p>'
-                : `<div style="display:flex; flex-direction:column; gap:1rem;">
-                                    ${notices.slice(-4).reverse().map(n => `
-                                        <div style="padding:1.25rem; border-left:4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}; background:rgba(0,0,0,0.2); border-radius:0 12px 12px 0;">
+                ? '<p style="color:var(--text-muted);">Quiet on the bulletin board today.</p>'
+                : `<div style="display:flex; flex-direction:column; gap:1.25rem;">
+                                    ${notices.slice(-5).reverse().map(n => `
+                                        <div style="padding:1.25rem; border-left:4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}; background:rgba(255,255,255,0.02); border-radius: 0 16px 16px 0; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">
                                             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
-                                                <div style="font-weight:700; color:white; line-height:1.3;">${n.title}</div>
-                                                <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap; margin-left:0.5rem;">${n.date}</span>
+                                                <div style="font-weight:800; color:white; line-height:1.3; font-size: 0.95rem;">${n.title}</div>
+                                                <span style="font-size:0.65rem; color:var(--text-muted); letter-spacing: 0.5px; font-weight: 700;">${n.date}</span>
                                             </div>
                                             <div style="color:var(--text-muted); font-size:0.85rem; line-height:1.5;">${n.content}</div>
                                         </div>
@@ -750,7 +828,9 @@ const app = {
 
             <style>
                 @media (max-width: 900px) {
-                    [style*="grid-template-columns: 2fr 1fr"] { grid-template-columns: 1fr !important; }
+                    .mobile-stack { grid-template-columns: 1fr !important; }
+                    .glass-panel[style*="display: flex; flex-wrap: wrap"] { flex-direction: column !important; }
+                    .glass-panel > div[style*="width: 250px"] { width: 100% !important; border-left: none !important; border-top: 1px solid var(--glass-border) !important; padding: 2rem !important; }
                 }
             </style>
         `;
@@ -785,26 +865,114 @@ const app = {
         return !this.isReadOnly();
     },
 
-    // --- Theme Management ---
+    // --- Theme & Accessibility Management ---
     setTheme(themeName) {
         document.body.className = '';
         if (themeName !== 'default') {
             document.body.classList.add(`${themeName}-theme`);
         }
         localStorage.setItem('egles_theme', themeName);
+        this.applyAccessibility();
     },
 
     loadTheme() {
-        const theme = localStorage.getItem('egles_theme');
-        if (theme) this.setTheme(theme);
+        const theme = localStorage.getItem('egles_theme') || 'default';
+        this.setTheme(theme);
+        this.renderAccessibilityWidget();
     },
 
-    toggleTheme() {
-        const themes = ['default', 'light', 'midnight', 'aurora', 'sunset'];
-        const current = localStorage.getItem('egles_theme') || 'default';
-        const idx = themes.indexOf(current);
-        const next = themes[(idx + 1) % themes.length];
-        this.setTheme(next);
+    applyAccessibility() {
+        const fontSize = localStorage.getItem('egles_font_size') || '1';
+        const dyslexic = localStorage.getItem('egles_dyslexic') === 'true';
+        const reducedMotion = localStorage.getItem('egles_reduced_motion') === 'true';
+
+        document.documentElement.style.setProperty('--font-scale', fontSize);
+        document.body.classList.toggle('dyslexic-font', dyslexic);
+        document.body.classList.toggle('reduced-motion', reducedMotion);
+    },
+
+    toggleAccessibilityFeature(feature) {
+        if (feature === 'dyslexic') {
+            const current = localStorage.getItem('egles_dyslexic') === 'true';
+            localStorage.setItem('egles_dyslexic', !current);
+        } else if (feature === 'motion') {
+            const current = localStorage.getItem('egles_reduced_motion') === 'true';
+            localStorage.setItem('egles_reduced_motion', !current);
+        } else if (feature === 'font-inc') {
+            let size = parseFloat(localStorage.getItem('egles_font_size') || '1');
+            if (size < 1.4) size += 0.1;
+            localStorage.setItem('egles_font_size', size.toFixed(1));
+        } else if (feature === 'font-dec') {
+            let size = parseFloat(localStorage.getItem('egles_font_size') || '1');
+            if (size > 0.8) size -= 0.1;
+            localStorage.setItem('egles_font_size', size.toFixed(1));
+        }
+        this.applyAccessibility();
+    },
+
+    renderAccessibilityWidget() {
+        const existing = document.getElementById('accessibility-widget');
+        if (existing) existing.remove();
+
+        const widget = document.createElement('div');
+        widget.id = 'accessibility-widget';
+        widget.style.cssText = 'position:fixed; bottom:2rem; left:2rem; z-index:9999;';
+
+        const themes = [
+            { id: 'default', name: 'Dark', color: '#6366f1' },
+            { id: 'light', name: 'Light', color: '#ffffff' },
+            { id: 'blue-glow', name: 'Blue Glow', color: '#58a6ff' },
+            { id: 'high-contrast', name: 'High Contrast', color: '#ffff00' },
+            { id: 'solarized', name: 'Solarized', color: '#268bd2' }
+        ];
+
+        widget.innerHTML = `
+            <button id="acc-trigger" style="width:50px; height:50px; border-radius:50%; background:var(--primary); color:white; border:none; box-shadow:0 10px 25px var(--primary-glow); cursor:pointer; font-size:1.5rem; display:flex; align-items:center; justify-content:center; transition:all 0.3s ease;">♿</button>
+            <div id="acc-menu" class="glass-panel" style="position:absolute; bottom:60px; left:0; width:280px; padding:1.5rem; display:none; flex-direction:column; gap:1.25rem; border:1px solid var(--glass-border); border-radius:24px; animation: slideUp 0.3s ease;">
+                <h3 style="margin:0; font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.75rem;">Accessibility Hub</h3>
+                
+                <div>
+                    <label style="display:block; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.75rem; font-weight:700;">Select Theme</label>
+                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                        ${themes.map(t => `<button onclick="app.setTheme('${t.id}')" style="width:30px; height:30px; border-radius:50%; background:${t.color}; border:2px solid ${localStorage.getItem('egles_theme') === t.id ? 'white' : 'transparent'}; cursor:pointer;" title="${t.name}"></button>`).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.75rem; font-weight:700;">Text Size</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button onclick="app.toggleAccessibilityFeature('font-dec')" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text); padding:0.5rem; border-radius:8px; cursor:pointer;">A-</button>
+                        <button onclick="app.toggleAccessibilityFeature('font-inc')" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text); padding:0.5rem; border-radius:8px; cursor:pointer;">A+</button>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.85rem;">Dyslexic Friendly</span>
+                    <button onclick="app.toggleAccessibilityFeature('dyslexic')" style="width:40px; height:20px; border-radius:20px; background:${localStorage.getItem('egles_dyslexic') === 'true' ? 'var(--success)' : 'rgba(255,255,255,0.1)'}; border:none; position:relative; cursor:pointer;">
+                        <div style="position:absolute; top:2px; ${localStorage.getItem('egles_dyslexic') === 'true' ? 'right:2px' : 'left:2px'}; width:16px; height:16px; background:white; border-radius:50%; transition:all 0.2s;"></div>
+                    </button>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.85rem;">Reduced Motion</span>
+                    <button onclick="app.toggleAccessibilityFeature('motion')" style="width:40px; height:20px; border-radius:20px; background:${localStorage.getItem('egles_reduced_motion') === 'true' ? 'var(--success)' : 'rgba(255,255,255,0.1)'}; border:none; position:relative; cursor:pointer;">
+                        <div style="position:absolute; top:2px; ${localStorage.getItem('egles_reduced_motion') === 'true' ? 'right:2px' : 'left:2px'}; width:16px; height:16px; background:white; border-radius:50%; transition:all 0.2s;"></div>
+                    </button>
+                </div>
+            </div>
+            <style>
+                @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            </style>
+        `;
+        document.body.appendChild(widget);
+
+        const trigger = widget.querySelector('#acc-trigger');
+        const menu = widget.querySelector('#acc-menu');
+        trigger.onclick = () => {
+            const isVisible = menu.style.display === 'flex';
+            menu.style.display = isVisible ? 'none' : 'flex';
+            trigger.style.transform = isVisible ? 'rotate(0)' : 'rotate(90deg)';
+        };
     },
 
     renderSidebar() {
@@ -854,15 +1022,16 @@ const app = {
             if (visibleItems.length === 0) return '';
 
             return `
-                <div class="nav-group">
-                    <span class="nav-label">${group.label}</span>
+            < div class="nav-group" >
+                <span class="nav-label">${group.label}</span>
                     ${visibleItems.map(item => `
                         <button class="nav-item ${item.id === 'dashboard' ? 'active' : ''}" onclick="app.navigate('${item.id}')">
                             <span>${item.name}</span>
                         </button>
-                    `).join('')}
-                </div>
-            `;
+                    `).join('')
+                }
+                </div >
+    `;
         }).join('');
     },
 
@@ -879,7 +1048,7 @@ const app = {
             if (studentFees < 1000) {
                 await this.addNotification(
                     'Fee Payment Alert',
-                    `Student ${student.name} (${student.studentId}) has paid less than $1,000. Current: $${studentFees.toLocaleString()}.`,
+                    `Student ${student.name} (${student.studentId}) has paid less than $1,000.Current: $${studentFees.toLocaleString()}.`,
                     'finance'
                 );
             }
@@ -897,7 +1066,7 @@ const app = {
                 const student = await db.students.where('studentId').equals(sid).first();
                 await this.addNotification(
                     'Disciplinary Warning',
-                    `Student ${student ? student.name : sid} has recorded ${infractionCounts[sid]} infractions. Review required.`,
+                    `Student ${student ? student.name : sid} has recorded ${infractionCounts[sid]} infractions.Review required.`,
                     'discipline'
                 );
             }
@@ -953,7 +1122,7 @@ const app = {
         }
 
         list.innerHTML = notifications.map(n => `
-            <div class="notif-item ${n.read ? '' : 'unread'}" onclick="app.markAsRead(${n.id})">
+    < div class="notif-item ${n.read ? '' : 'unread'}" onclick = "app.markAsRead(${n.id})" >
                 <div class="notif-icon" style="background: ${this.getNotifColor(n.type)}">
                     ${this.getNotifEmoji(n.type)}
                 </div>
@@ -962,8 +1131,8 @@ const app = {
                     <div class="notif-msg">${n.message}</div>
                     <div class="notif-time">${n.date}</div>
                 </div>
-            </div>
-        `).join('');
+            </div >
+    `).join('');
     },
 
     getNotifColor(type) {
@@ -1009,7 +1178,7 @@ const app = {
         const modal = document.createElement('div');
         modal.className = 'modal-backdrop';
         modal.innerHTML = `
-            <div class="glass-panel auth-card" style="width: 500px; padding: 3rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 24px; position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 2500;">
+    < div class="glass-panel auth-card" style = "width: 500px; padding: 3rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 24px; position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 2500;" >
                 <h2 style="text-align: center;">Provision New Staff</h2>
                 <p style="text-align: center; margin-bottom: 2rem;">Register a teacher or administrator and generate their credentials.</p>
                 <form id="provision-form" onsubmit="app.handleProvision(event)">
@@ -2920,6 +3089,60 @@ const app = {
             await this.updateNotifBadge();
             this.renderDiscipline();
         };
+    },
+
+    async showFacultyProfile(staffId) {
+        const staff = await db.staff.where('staffId').equals(staffId).first();
+        const subjects = await db.subjects.where('teacherId').equals(staffId).toArray();
+        if (!staff) return;
+
+        const modal = document.createElement('div');
+        modal.id = 'faculty-modal';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(10,15,30,0.95); z-index:10000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(15px); padding:1rem;';
+        modal.innerHTML = `
+            <div class="glass-panel" style="width:100%; max-width:600px; padding:3rem; position:relative; border:1px solid var(--primary); animation: modalZoom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <button onclick="this.closest('#faculty-modal').remove()" style="position:absolute; top:2rem; right:2rem; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem;">✕</button>
+                <div style="display:flex; gap:2.5rem; align-items:center; flex-wrap:wrap;">
+                    <div style="width:140px; height:140px; border-radius:30px; background:var(--bg-main); border:2px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:4rem; box-shadow:0 15px 35px var(--primary-glow);">
+                        ${staff.role === 'Admin' ? '🤵' : '👨‍🏫'}
+                    </div>
+                    <div style="flex:1; min-width:250px;">
+                        <span style="background:var(--primary-glow); color:var(--primary-bright); padding:4px 12px; border-radius:100px; font-size:0.75rem; font-weight:800; letter-spacing:1px; text-transform:uppercase;">Faculty Profile</span>
+                        <h2 style="margin:0.5rem 0; font-size:2.5rem; font-weight:900;">${staff.name}</h2>
+                        <div style="color:var(--text-muted); margin-bottom:1.5rem; font-size:1.1rem;">${staff.role} &bull; Senior Department Head</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top:2.5rem; display:grid; grid-template-columns:1fr 1fr; gap:2rem;">
+                    <div>
+                        <h4 style="text-transform:uppercase; font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem; letter-spacing:1px;">Academic Portfolio</h4>
+                        <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                            ${subjects.length > 0 ? subjects.map(s => `<span style="background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); padding:6px 12px; border-radius:8px; font-size:0.9rem;">${s.name} (${s.class})</span>`).join('') : 'General Administration'}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="text-transform:uppercase; font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem; letter-spacing:1px;">Connect</h4>
+                        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                            <a href="mailto:${staff.name.replace(' ', '.').toLowerCase()}@egles.edu" style="color:var(--primary); font-size:0.95rem; text-decoration:none;">📧 Official Email</a>
+                            <span style="color:var(--text-muted); font-size:0.95rem;">📞 Ext: 40291 (Direct)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:2.5rem; padding-top:2.5rem; border-top:1px solid var(--glass-border);">
+                    <h4 style="text-transform:uppercase; font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem; letter-spacing:1px;">Faculty Bio & Philosophy</h4>
+                    <p style="color:var(--text-muted); line-height:1.7; font-size:0.95rem; margin:0;">
+                        Dedicated to academic excellence and nurturing the unique potential of every student. With over 12 years of experience at Egles SMIS, I believe in a holistic approach to education that combines rigorous academics with character development.
+                    </p>
+                </div>
+                
+                <button class="btn-primary" style="margin-top:2.5rem; width:100%;" onclick="this.closest('#faculty-modal').remove()">Return to Directory</button>
+            </div>
+            <style>
+                @keyframes modalZoom { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            </style>
+        `;
+        document.body.appendChild(modal);
     },
 
     viewIDCard(id) {
