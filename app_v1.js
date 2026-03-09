@@ -90,54 +90,65 @@ const app = {
                 <div style="max-width:1200px; margin:0 auto; padding:3rem 2rem;">
                     
                     <!-- PREMIUM: Live Event & Admissions Countdown -->
-                    <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); border-radius: 20px; padding: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; margin-bottom: 3rem; box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);">
-                        <div>
-                            <div style="text-transform: uppercase; font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.5rem; opacity: 0.9;">Next Major Event</div>
-                            <h2 style="font-size: 2rem; margin: 0; font-weight: 800;">Term 2 Admissions Open</h2>
+                    <div class="premium-countdown" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%); border-radius: 20px; padding: 2.5rem; color: white; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; margin-bottom: 4rem; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.25);">
+                        <div class="countdown-text">
+                            <div style="text-transform: uppercase; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 0.75rem; color: rgba(255,255,255,0.8);">Next Major Event</div>
+                            <h2 style="font-size: 2.2rem; margin: 0; font-weight: 800; line-height: 1.2;">Term 2 Admissions Open</h2>
                         </div>
-                        <div style="display: flex; gap: 1rem; text-align: center;">
-                            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem; border-radius: 15px; min-width: 80px;">
-                                <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">14</div>
-                                <div style="font-size: 0.8rem; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.8;">Days</div>
+                        <div class="countdown-numbers" style="display: flex; gap: 1rem; text-align: center; flex-wrap: wrap; justify-content: center;">
+                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+                                <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">14</div>
+                                <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Days</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem; border-radius: 15px; min-width: 80px;">
-                                <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">08</div>
-                                <div style="font-size: 0.8rem; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.8;">Hrs</div>
+                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+                                <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">08</div>
+                                <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Hrs</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem; border-radius: 15px; min-width: 80px;">
-                                <div style="font-size: 2.5rem; font-weight: 800; line-height: 1;">45</div>
-                                <div style="font-size: 0.8rem; text-transform: uppercase; margin-top: 0.5rem; opacity: 0.8;">Mins</div>
+                            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 1.25rem 1rem; border-radius: 16px; min-width: 90px; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);">
+                                <div style="font-size: 2.8rem; font-weight: 800; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">45</div>
+                                <div style="font-size: 0.85rem; text-transform: uppercase; margin-top: 0.5rem; font-weight: 700; color: rgba(255,255,255,0.9);">Mins</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- PREMIUM: Hall of Fame Carousel -->
-                    <div style="margin-bottom: 4rem;">
-                        <h2 style="font-size: 2.2rem; margin-bottom: 2rem; text-align: center;">🏆 Wall of Excellence</h2>
-                        <div style="display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;" class="hide-scrollbar">
-                            <div style="min-width: 300px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; scroll-snap-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)'" onmouseout="this.style.transform='translateY(0)'">
-                                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
-                                    <span style="font-size: 2rem;">🥇</span>
-                                    <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; height: fit-content;">Academics</span>
+                    <!-- PREMIUM: Hall of Fame -->
+                    <div style="margin-bottom: 5rem;">
+                        <h2 style="font-size: 2.2rem; margin-bottom: 2.5rem; text-align: center;">🏆 Wall of Excellence</h2>
+                        <div class="excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                            <!-- Academics -->
+                            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='var(--warning)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                                        <div style="font-size: 2.5rem; background: rgba(245, 158, 11, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">🥇</div>
+                                        <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">Academics</span>
+                                    </div>
+                                    <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">Sarah Jenkins</h3>
+                                    <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">National Science Olympiad Winner 2025. Perfect score in Advanced Physics.</p>
                                 </div>
-                                <h3 style="font-size: 1.3rem; margin:0 0 0.5rem 0;">Sarah Jenkins</h3>
-                                <p style="color: var(--text-muted); font-size: 0.95rem; margin:0;">National Science Olympiad Winner 2025. Perfect score in Advanced Physics.</p>
                             </div>
-                            <div style="min-width: 300px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; scroll-snap-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)'" onmouseout="this.style.transform='translateY(0)'">
-                                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
-                                    <span style="font-size: 2rem;">⚽</span>
-                                    <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; height: fit-content;">Sports</span>
+                            
+                            <!-- Sports -->
+                            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='var(--success)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                                        <div style="font-size: 2.5rem; background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">⚽</div>
+                                        <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">Sports</span>
+                                    </div>
+                                    <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">Senior Boys Football</h3>
+                                    <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">Regional Champions for three consecutive years (2023-2025).</p>
                                 </div>
-                                <h3 style="font-size: 1.3rem; margin:0 0 0.5rem 0;">Senior Boys Football</h3>
-                                <p style="color: var(--text-muted); font-size: 0.95rem; margin:0;">Regional Champions for three consecutive years (2023-2025).</p>
                             </div>
-                            <div style="min-width: 300px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; scroll-snap-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-10px)'" onmouseout="this.style.transform='translateY(0)'">
-                                <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
-                                    <span style="font-size: 2rem;">🎭</span>
-                                    <span style="background: rgba(236, 72, 153, 0.1); color: var(--secondary); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; height: fit-content;">Arts</span>
+                            
+                            <!-- Arts -->
+                            <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 100%;" onmouseover="this.style.transform='translateY(-8px)'; this.style.borderColor='var(--secondary)'" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--glass-border)'">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                                        <div style="font-size: 2.5rem; background: rgba(236, 72, 153, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 16px;">🎭</div>
+                                        <span style="background: rgba(236, 72, 153, 0.1); color: var(--secondary); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">Arts</span>
+                                    </div>
+                                    <h3 style="font-size: 1.35rem; margin:0 0 0.75rem 0;">Drama Club</h3>
+                                    <p style="color: var(--text-muted); font-size: 0.95rem; margin:0; line-height: 1.5;">Awarded "Best Ensemble" at the National Schools Theatre Festival.</p>
                                 </div>
-                                <h3 style="font-size: 1.3rem; margin:0 0 0.5rem 0;">Drama Club</h3>
-                                <p style="color: var(--text-muted); font-size: 0.95rem; margin:0;">Awarded "Best Ensemble" at the National Schools Theatre Festival.</p>
                             </div>
                         </div>
                     </div>
@@ -342,6 +353,22 @@ const app = {
                 @media (max-width: 900px) {
                     .mobile-stack { grid-template-columns: 1fr !important; }
                     #public-portal h1 { font-size: 2.5rem !important; }
+                    .premium-countdown {
+                        flex-direction: column !important;
+                        text-align: center !important;
+                        padding: 1.5rem !important;
+                    }
+                    .premium-countdown .countdown-text h2 {
+                        font-size: 1.8rem !important;
+                        line-height: 1.3 !important;
+                    }
+                    .countdown-numbers {
+                        width: 100% !important;
+                        justify-content: center !important;
+                    }
+                    .excellence-grid, .curriculum-grid {
+                        grid-template-columns: 1fr !important;
+                    }
                 }
             </style>
         `;
