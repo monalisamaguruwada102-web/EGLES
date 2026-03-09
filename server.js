@@ -11,8 +11,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname)); // Serve frontend files
 
+// Use Render persistent disk path if available, otherwise local
+const dbPath = process.env.RENDER_DISK_PATH
+    ? path.join(process.env.RENDER_DISK_PATH, 'egles.db')
+    : path.join(__dirname, 'egles.db');
+
+console.log(`Database path: ${dbPath}`);
+
 // Initialize SQLite database
-const db = new Database(path.join(__dirname, 'egles.db'));
+const db = new Database(dbPath);
+
 
 // Auto-create all tables on startup
 db.exec(`

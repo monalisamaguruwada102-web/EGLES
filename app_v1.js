@@ -3,22 +3,26 @@ const app = {
     container: document.getElementById('app-container'),
 
     async init() {
-        console.log("app.init() started");
         this.container = document.getElementById('app-container');
 
-        // Phase 6: Authentication Check
         if (this.checkAuth()) {
+            const user = this.currentUser;
+            // Student portal - only show results/fees
+            if (user.role === 'Student') {
+                document.querySelector('.sidebar').style.display = 'none';
+                this.loadTheme();
+                await this.renderStudentPortal();
+                return;
+            }
             this.renderSidebar();
             this.updateHeaderUser();
             this.renderDashboard();
             this.loadTheme();
-            console.log("Checking system alerts...");
             await this.checkSystemAlerts();
-            console.log("Updating notification badge...");
             await this.updateNotifBadge();
-            console.log("app.init() - Auth flow complete");
         } else {
-            this.showLogin();
+            // Show public portal by default (no login needed)
+            this.showPublicPortal();
         }
 
         this.updateOnlineStatus();
@@ -35,68 +39,321 @@ const app = {
         return false;
     },
 
-    showLogin(isSignup = false) {
+    showPublicPortal() {
+        document.querySelector('.sidebar').style.display = 'none';
+        document.querySelector('.top-bar').style.display = 'none';
+        this.container.innerHTML = `
+            <div id="public-portal" style="min-height:100vh; background: var(--bg-main);">
+                <!-- Hero -->
+                <div style="background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%); padding: 3rem 4rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:2rem;">
+                    <div>
+                        <div style="font-size:2.5rem; font-weight:800; color:white; letter-spacing:-1px;">Egles <span style="opacity:0.8;">SMIS</span></div>
+                        <div style="color:rgba(255,255,255,0.8); font-size:1.1rem; margin-top:0.5rem;">Secondary School Management & Information System</div>
+                        <div style="display:flex; gap:1rem; margin-top:2rem; flex-wrap:wrap;">
+                            <button onclick="app.showStaffLogin()" class="btn-primary" style="background:white; color:var(--primary); font-weight:700;">🔐 Staff / Admin Login</button>
+                            <button onclick="app.showStudentLogin()" class="btn-primary" style="background:rgba(255,255,255,0.15); border:2px solid white; color:white;">🎓 Student Portal</button>
+                        </div>
+                    </div>
+                    <div style="font-size:6rem;">🏫</div>
+                </div>
+
+                <!-- Live Stats -->
+                <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1.5rem; padding:2rem 4rem; background:var(--bg-card);">
+                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
+                        <div style="font-size:2rem; font-weight:800; color:var(--primary);" id="pub-students">—</div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Total Students</div>
+                    </div>
+                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
+                        <div style="font-size:2rem; font-weight:800; color:var(--success);" id="pub-staff">—</div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Teaching Staff</div>
+                    </div>
+                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
+                        <div style="font-size:2rem; font-weight:800; color:var(--accent);" id="pub-subjects">—</div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Subjects Offered</div>
+                    </div>
+                    <div class="glass-panel" style="margin:0; text-align:center; padding:1.5rem;">
+                        <div style="font-size:2rem; font-weight:800; color:var(--warning);" id="pub-notices">—</div>
+                        <div style="font-size:0.85rem; color:var(--text-muted);">Active Notices</div>
+                    </div>
+                </div>
+
+                <!-- Notice Board -->
+                <div style="padding:2rem 4rem;">
+                    <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1.5rem;">📢 Public Notice Board</h2>
+                    <div id="pub-notices-list" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem;"></div>
+                </div>
+
+                <!-- Timetable (public) -->
+                <div style="padding:0 4rem 4rem;">
+                    <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1.5rem;">📅 General Timetable</h2>
+                    <div id="pub-timetable" class="glass-panel" style="overflow-x:auto;"></div>
+                </div>
+            </div>
+        `;
+        // Load public data
+        this._loadPublicData();
+    },
+
+    async _loadPublicData() {
+        const [students, staff, subjects, notices, timetable] = await Promise.all([
+            db.students.toArray(),
+            db.staff.toArray(),
+            db.subjects.toArray(),
+            db.notices.toArray(),
+            db.timetable.toArray()
+        ]);
+        const pubS = document.getElementById('pub-students');
+        if (pubS) pubS.textContent = students.length;
+        const pubStaff = document.getElementById('pub-staff');
+        if (pubStaff) pubStaff.textContent = staff.filter(s => s.role === 'Teacher').length;
+        const pubSubj = document.getElementById('pub-subjects');
+        if (pubSubj) pubSubj.textContent = subjects.length;
+        const pubN = document.getElementById('pub-notices');
+        if (pubN) pubN.textContent = notices.length;
+
+        // Notices
+        const nl = document.getElementById('pub-notices-list');
+        if (nl) {
+            nl.innerHTML = notices.length === 0
+                ? '<p style="color:var(--text-muted);">No public notices at this time.</p>'
+                : notices.slice(-6).reverse().map(n => `
+                    <div class="glass-panel" style="margin:0; border-left:4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}">
+                        <div style="font-weight:700; margin-bottom:0.5rem;">${n.title}</div>
+                        <div style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">${n.content}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">📅 ${n.date}</div>
+                    </div>`).join('');
+        }
+
+        // Timetable
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const periods = ['08:00-09:00', '09:00-10:00', '10:30-11:30', '11:30-12:30', '14:00-15:00'];
+        const tt = document.getElementById('pub-timetable');
+        if (tt) {
+            if (timetable.length === 0) {
+                tt.innerHTML = '<p style="padding:2rem; color:var(--text-muted);">No timetable data available yet.</p>';
+            } else {
+                tt.innerHTML = `<table style="width:100%; border-collapse:collapse;">
+                    <thead><tr>
+                        <th style="padding:0.75rem; border:1px solid var(--glass-border);">Period</th>
+                        ${days.map(d => `<th style="padding:0.75rem; border:1px solid var(--glass-border);">${d}</th>`).join('')}
+                    </tr></thead>
+                    <tbody>
+                        ${periods.map(p => `<tr>
+                            <td style="padding:0.75rem; border:1px solid var(--glass-border); font-weight:600; white-space:nowrap;">${p}</td>
+                            ${days.map(d => { const e = timetable.find(s => s.day === d && s.period === p); return `<td style="padding:0.75rem; border:1px solid var(--glass-border); background:${e ? 'var(--glass-bg)' : ''}">${e ? `<strong>${e.subject}</strong><br><small style="color:var(--text-muted)">${e.class}</small>` : '-'}</td>`; }).join('')}
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+            }
+        }
+    },
+
+    showStaffLogin() {
+        document.querySelector('.sidebar').style.display = 'none';
+        document.querySelector('.top-bar').style.display = 'none';
         this.container.innerHTML = `
             <div class="auth-overlay">
                 <div class="glass-panel auth-card">
-                    <div class="logo" style="text-align:center; margin-bottom: 2rem;">Egles <span>SMIS</span></div>
-                    <h2>${isSignup ? 'Create Account' : 'Welcome Back'}</h2>
-                    <p style="margin-bottom: 2rem;">Please enter your credentials to continue.</p>
-                    
-                    <form onsubmit="app.handleAuth(event, ${isSignup})">
-                        ${isSignup ? '<input type="text" id="auth-name" placeholder="Full Name" required>' : ''}
-                        <input type="text" id="auth-user" placeholder="Username" required>
-                        <input type="password" id="auth-pass" placeholder="Password" required>
-                        ${isSignup ? `
-                            <select id="auth-role">
-                                <option value="Student">Student</option>
-                                <option value="Parent">Parent</option>
-                            </select>
-                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
-                                Note: Staff accounts must be provisioned by an Administrator.
-                            </p>
-                        ` : ''}
-                        
-                        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">
-                            ${isSignup ? 'Sign Up' : 'Sign In'}
-                        </button>
+                    <div style="text-align:center; margin-bottom:1rem; font-size:2.5rem;">🔐</div>
+                    <div class="logo" style="text-align:center; margin-bottom:0.5rem;">Egles <span>SMIS</span></div>
+                    <h2 style="text-align:center;">Staff / Admin Login</h2>
+                    <p style="text-align:center; color:var(--text-muted); margin-bottom:2rem; font-size:0.85rem;">Staff accounts are provisioned by the Administrator.</p>
+                    <form onsubmit="app.handleStaffAuth(event)">
+                        <input type="text" id="auth-user" placeholder="Username" required autocomplete="username">
+                        <input type="password" id="auth-pass" placeholder="Password" required autocomplete="current-password">
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top:1rem;">Sign In</button>
                     </form>
-                    
-                    <div style="margin-top: 2rem; text-align: center; font-size: 0.9rem;">
-                        ${isSignup ? 'Already have an account?' : 'Need a new account?'} 
-                        <a href="#" onclick="app.showLogin(${!isSignup})" style="color: var(--primary); font-weight: 600; text-decoration: none; margin-left: 0.5rem;">
-                            ${isSignup ? 'Sign In' : 'Sign Up'}
-                        </a>
+                    <div style="margin-top:1.5rem; text-align:center;">
+                        <a href="#" onclick="app.init()" style="color:var(--primary); font-size:0.85rem;">← Back to Public Portal</a>
                     </div>
                 </div>
             </div>
         `;
     },
 
-    async handleAuth(e, isSignup) {
+    showStudentLogin() {
+        document.querySelector('.sidebar').style.display = 'none';
+        document.querySelector('.top-bar').style.display = 'none';
+        this.container.innerHTML = `
+            <div class="auth-overlay">
+                <div class="glass-panel auth-card">
+                    <div style="text-align:center; margin-bottom:1rem; font-size:2.5rem;">🎓</div>
+                    <div class="logo" style="text-align:center; margin-bottom:0.5rem;">Egles <span>SMIS</span></div>
+                    <h2 style="text-align:center;">Student Results Portal</h2>
+                    <p style="text-align:center; color:var(--text-muted); margin-bottom:2rem; font-size:0.85rem;">Enter your Student ID and Full Name to access your results and fees.</p>
+                    <form onsubmit="app.handleStudentLogin(event)">
+                        <input type="text" id="stu-id" placeholder="Student ID (e.g. STU-12345)" required>
+                        <input type="text" id="stu-name" placeholder="Full Name" required>
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top:1rem; background:var(--secondary);">Access My Portal</button>
+                    </form>
+                    <div style="margin-top:1.5rem; text-align:center;">
+                        <a href="#" onclick="app.init()" style="color:var(--primary); font-size:0.85rem;">← Back to Public Portal</a>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async handleStaffAuth(e) {
         e.preventDefault();
-        const username = document.getElementById('auth-user').value;
+        const username = document.getElementById('auth-user').value.trim();
         const password = document.getElementById('auth-pass').value;
-
-        if (isSignup) {
-            const name = document.getElementById('auth-name').value;
-            const role = document.getElementById('auth-role').value;
-
-            const exists = await db.users.where('username').equals(username).first();
-            if (exists) return alert('Username already exists');
-
-            await db.users.add({ username, password, name, role });
-            alert('Account created! Please sign in.');
-            this.showLogin(false);
+        const users = await db.users.toArray();
+        const user = users.find(u => u.username === username && u.password === password);
+        if (user && ['Admin', 'Teacher', 'Staff', 'Bursar'].includes(user.role)) {
+            localStorage.setItem('egles_session', JSON.stringify(user));
+            document.querySelector('.sidebar').style.display = '';
+            document.querySelector('.top-bar').style.display = '';
+            this.init();
+        } else if (user) {
+            alert('This portal is for Staff and Admins only. Use the Student Portal.');
         } else {
-            const user = await db.users.where('username').equals(username).and(u => u.password === password).first();
-            if (user) {
-                localStorage.setItem('egles_session', JSON.stringify(user));
-                this.init();
-            } else {
-                alert('Invalid credentials');
-            }
+            alert('Invalid credentials. If you believe this is an error, contact your Administrator.');
         }
+    },
+
+    async handleStudentLogin(e) {
+        e.preventDefault();
+        const studentId = document.getElementById('stu-id').value.trim();
+        const name = document.getElementById('stu-name').value.trim().toLowerCase();
+        const students = await db.students.toArray();
+        const student = students.find(s => s.studentId.toLowerCase() === studentId.toLowerCase() && s.name.toLowerCase() === name);
+        if (student) {
+            const session = { role: 'Student', name: student.name, studentId: student.studentId, id: student.id };
+            localStorage.setItem('egles_session', JSON.stringify(session));
+            this.currentUser = session;
+            await this.renderStudentPortal();
+        } else {
+            alert('Student not found. Please check your Student ID and Full Name, then try again.');
+        }
+    },
+
+    async renderStudentPortal() {
+        document.querySelector('.sidebar').style.display = 'none';
+        document.querySelector('.top-bar').style.display = 'none';
+        const user = this.currentUser;
+        const [marks, fees, notices, attendance] = await Promise.all([
+            db.marks.toArray(),
+            db.fees.toArray(),
+            db.notices.toArray(),
+            db.attendance.toArray()
+        ]);
+        const myMarks = marks.filter(m => m.studentId === user.studentId);
+        const myFees = fees.filter(f => f.studentId === user.studentId);
+        const myAttendance = attendance.filter(a => a.studentId === user.studentId);
+        const totalPaid = myFees.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
+        const presentDays = myAttendance.filter(a => a.status === 'Present').length;
+        const attendancePct = myAttendance.length ? Math.round((presentDays / myAttendance.length) * 100) : 0;
+
+        // Group marks by subject
+        const subjectMap = {};
+        myMarks.forEach(m => {
+            if (!subjectMap[m.subject]) subjectMap[m.subject] = [];
+            subjectMap[m.subject].push(m);
+        });
+
+        this.container.innerHTML = `
+            <div style="padding:2rem; max-width:900px; margin:0 auto;">
+                <!-- Header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <div style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Student Portal</div>
+                        <h1 style="margin:0.25rem 0; font-size:1.8rem;">Welcome, ${user.name}</h1>
+                        <div style="color:var(--primary); font-weight:600; font-family:monospace;">${user.studentId}</div>
+                    </div>
+                    <button onclick="app.logout()" class="btn-primary" style="background:var(--glass-bg); color:var(--text); border:1px solid var(--glass-border); box-shadow:none;">Sign Out</button>
+                </div>
+
+                <!-- Stats -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem;">
+                    <div class="glass-panel" style="margin:0; padding:1.25rem; text-align:center;">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--primary);">${myMarks.length}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Results Recorded</div>
+                    </div>
+                    <div class="glass-panel" style="margin:0; padding:1.25rem; text-align:center;">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--success);">$${totalPaid.toFixed(2)}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Total Fees Paid</div>
+                    </div>
+                    <div class="glass-panel" style="margin:0; padding:1.25rem; text-align:center;">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--accent);">${attendancePct}%</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Attendance Rate</div>
+                    </div>
+                    <div class="glass-panel" style="margin:0; padding:1.25rem; text-align:center;">
+                        <div style="font-size:1.75rem; font-weight:800; color:var(--warning);">${Object.keys(subjectMap).length}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">Subjects</div>
+                    </div>
+                </div>
+
+                <!-- Academic Results -->
+                <div class="glass-panel" style="margin-bottom:2rem;">
+                    <h2 style="margin-bottom:1.5rem;">📊 Academic Results</h2>
+                    ${Object.keys(subjectMap).length === 0
+                ? '<p style="color:var(--text-muted);">No results recorded yet.</p>'
+                : `<table style="width:100%; border-collapse:collapse;">
+                            <thead><tr style="text-align:left; border-bottom:2px solid var(--glass-border);">
+                                <th style="padding:0.75rem;">Subject</th>
+                                <th style="padding:0.75rem;">Term</th>
+                                <th style="padding:0.75rem;">Score</th>
+                                <th style="padding:0.75rem;">Grade</th>
+                            </tr></thead>
+                            <tbody>
+                                ${myMarks.map(m => `<tr style="border-bottom:1px solid var(--glass-border);">
+                                    <td style="padding:0.75rem; font-weight:600;">${m.subject}</td>
+                                    <td style="padding:0.75rem; color:var(--text-muted);">${m.term} ${m.year}</td>
+                                    <td style="padding:0.75rem;">
+                                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                                            <div style="flex:1; height:6px; background:var(--glass-bg); border-radius:3px; max-width:100px;">
+                                                <div style="height:100%; border-radius:3px; background:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; width:${m.score}%;"></div>
+                                            </div>
+                                            ${m.score}%
+                                        </div>
+                                    </td>
+                                    <td style="padding:0.75rem;"><span class="status-pill" style="background:${m.score >= 80 ? 'rgba(16,185,129,0.15)' : m.score >= 60 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'}; color:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; border:none;">${this.calculateGrade(m.score)}</span></td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>`
+            }
+                </div>
+
+                <!-- Fee Statement -->
+                <div class="glass-panel" style="margin-bottom:2rem;">
+                    <h2 style="margin-bottom:1.5rem;">💳 Fee Statement</h2>
+                    ${myFees.length === 0
+                ? '<p style="color:var(--text-muted);">No fee records found.</p>'
+                : `<table style="width:100%; border-collapse:collapse;">
+                            <thead><tr style="text-align:left; border-bottom:2px solid var(--glass-border);">
+                                <th style="padding:0.75rem;">Type</th>
+                                <th style="padding:0.75rem;">Amount</th>
+                                <th style="padding:0.75rem;">Date</th>
+                            </tr></thead>
+                            <tbody>
+                                ${myFees.map(f => `<tr style="border-bottom:1px solid var(--glass-border);">
+                                    <td style="padding:0.75rem;">${f.type}</td>
+                                    <td style="padding:0.75rem; color:var(--success); font-weight:600;">$${parseFloat(f.amount).toFixed(2)}</td>
+                                    <td style="padding:0.75rem; color:var(--text-muted);">${f.date}</td>
+                                </tr>`).join('')}
+                                <tr>
+                                    <td style="padding:0.75rem; font-weight:700;">Total Paid</td>
+                                    <td style="padding:0.75rem; font-weight:700; color:var(--success); font-size:1.1rem;">$${totalPaid.toFixed(2)}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody></table>`
+            }
+                </div>
+
+                <!-- Notices -->
+                <div class="glass-panel">
+                    <h2 style="margin-bottom:1.5rem;">📢 School Notices</h2>
+                    ${notices.length === 0
+                ? '<p style="color:var(--text-muted);">No notices.</p>'
+                : notices.slice(-4).reverse().map(n => `<div style="padding:1rem; border-left:4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}; margin-bottom:1rem; background:var(--glass-bg); border-radius:0 8px 8px 0;">
+                            <div style="font-weight:700;">${n.title}</div>
+                            <div style="color:var(--text-muted); font-size:0.9rem; margin-top:0.25rem;">${n.content}</div>
+                        </div>`).join('')
+            }
+                </div>
+            </div>
+        `;
     },
 
     logout() {
