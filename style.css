@@ -1116,10 +1116,35 @@ tr:hover td {
         grid-template-columns: 1fr;
     }
 
+    /* Admin header layout */
+    .admin-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+
+    .admin-header>div:last-child {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start !important;
+    }
+
+    /* Forcing buttons to wrap neatly on mobile */
+    .admin-header.button-group button {
+        flex: 1;
+        min-width: 140px;
+    }
+
     /* Inline form layouts collapse */
+    .mobile-stack,
     [style*="grid-template-columns: 1fr 2fr"],
     [style*="grid-template-columns: 1fr 1fr"] {
         grid-template-columns: 1fr !important;
+    }
+
+    /* Ensure table headers are explicitly white-space: nowrap inside panels */
+    .glass-panel table th {
+        white-space: nowrap;
     }
 
     /* Top bar user display */

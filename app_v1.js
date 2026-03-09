@@ -944,7 +944,7 @@ const app = {
             ${canEdit ? `
             <div class="glass-panel" style="margin-bottom: 2rem;">
                 <h2>Add Schedule</h2>
-                <form id="tt-form" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <form id="tt-form" class="mobile-stack" style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <input type="text" id="tt-class" placeholder="Class (e.g. Form 1A)" required style="flex: 1;">
                     <select id="tt-day" required style="flex: 1;">
                         ${days.map(d => `<option value="${d}">${d}</option>`).join('')}
@@ -1006,7 +1006,7 @@ const app = {
         const canEdit = this.canModify();
         this.container.innerHTML = `
             <h1>Library ${canEdit ? 'Management' : 'Catalog'}</h1>
-            <div style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
                 ${canEdit ? `
                 <div class="glass-panel" style="margin: 0;">
                     <h2>Register Book</h2>
@@ -1090,7 +1090,7 @@ const app = {
 
         this.container.innerHTML = `
             <h1>Disciplinary Tracker</h1>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
                 <form id="disc-form" class="glass-panel" style="margin: 0;">
                     <h2>Record Infraction</h2>
                     <select id="ds-student" required>
@@ -1150,7 +1150,7 @@ const app = {
         const canEdit = this.canModify();
         this.container.innerHTML = `
             <h1>Student Health Records</h1>
-            <div style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
                 ${canEdit ? `
                 <form id="health-form" class="glass-panel" style="margin: 0;">
                     <h2>Add/Update Health Info</h2>
@@ -1215,7 +1215,7 @@ const app = {
 
         this.container.innerHTML = `
             <h1>Staff Payroll System</h1>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
                 <form id="pay-form" class="glass-panel" style="margin: 0;">
                     <h2>Process Payment</h2>
                     <select id="p-staff" required>
@@ -1272,7 +1272,7 @@ const app = {
 
         this.container.innerHTML = `
             <h1>Tuckshop POS Terminal</h1>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
                 <form id="pos-form" class="glass-panel" style="margin: 0;">
                     <h2>New Transaction</h2>
                     <input type="text" id="pos-item" placeholder="Item Name" required>
@@ -1325,7 +1325,7 @@ const app = {
 
         this.container.innerHTML = `
             <h1>Expenses Tracker</h1>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
                 <form id="exp-form" class="glass-panel" style="margin: 0;">
                     <h2>Record Expense</h2>
                     <input type="text" id="ex-name" placeholder="Expense Name" required>
@@ -1380,9 +1380,9 @@ const app = {
     async renderInventory() {
         const assets = await db.assets.toArray();
         this.container.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>School Assets & Inventory</h1>
-                <div style="display: flex; gap: 1rem;">
+                <div class="button-group" style="display: flex; gap: 1rem;">
                     <button class="btn-primary" onclick="app.renderInventoryAudit()" style="background: var(--accent);">Inventory Audit Report</button>
                     <button class="btn-primary" onclick="app.exportToCSV('assets')" style="background: var(--success);">Export Ledger (CSV)</button>
                     <button class="btn-primary" onclick="app.showAssetForm()">Add New Asset</button>
@@ -1495,9 +1495,9 @@ const app = {
     async renderStaff() {
         const staffList = await db.staff.toArray();
         this.container.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>Staff Management</h1>
-                <div style="display: flex; gap: 1rem;">
+                <div class="button-group" style="display: flex; gap: 1rem;">
                     <button class="btn-primary" onclick="app.exportToCSV('staff')" style="background: var(--success);">Export Staff (CSV)</button>
                     <button class="btn-primary" onclick="app.showStaffForm()">Register Staff</button>
                 </div>
@@ -1581,7 +1581,7 @@ const app = {
 
         this.container.innerHTML = `
             <h1>Subject Management</h1>
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
                 <form id="subj-form" class="glass-panel" style="margin: 0;">
                     <h2>Define Subject</h2>
                     <input type="text" id="subj-name" placeholder="Subject Name (e.g. Mathematics)" required>
@@ -1631,9 +1631,9 @@ const app = {
     async renderStudents() {
         const students = await db.students.toArray();
         this.container.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>Student Directory</h1>
-                <div style="display: flex; gap: 1rem;">
+                <div class="button-group" style="display: flex; gap: 1rem;">
                     <button class="btn-primary" onclick="app.exportToCSV('students')" style="background: var(--success);">Export to CSV</button>
                     <button class="btn-primary" onclick="app.showStudentForm()">Admit Student</button>
                 </div>
@@ -1719,9 +1719,9 @@ const app = {
         this.container.innerHTML = `
             <h1>Attendance Management</h1>
             <div class="glass-panel" style="margin: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <h2>Record Daily Attendance</h2>
-                    <input type="date" id="att-date" value="${today}" style="width: auto; margin: 0;">
+                    <input type="date" id="att-date" value="${today}" style="width: auto; margin: 0; min-width: 150px;">
                 </div>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
@@ -1767,7 +1767,7 @@ const app = {
         const canEdit = this.canModify();
         this.container.innerHTML = `
             <h1>Fees ${canEdit ? 'Management' : 'Statement'}</h1>
-            <div style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+            <div class="mobile-stack" style="display: grid; grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
                 ${canEdit ? `
                 <form id="fees-form" class="glass-panel" style="margin: 0;">
                     <h2>Record Payment</h2>
@@ -1825,11 +1825,13 @@ const app = {
 
         const canEdit = this.canModify();
         this.container.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>Examination ${canEdit ? 'Management' : 'Results'}</h1>
-                ${canEdit ? `<button class="btn-primary" onclick="app.showReportSelector()" style="background: var(--accent); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);">Generate Report Cards</button>` : ''}
+                <div class="button-group" style="display: flex; gap: 1rem; width: 100%;">
+                    ${canEdit ? `<button class="btn-primary" onclick="app.showReportSelector()" style="background: var(--accent); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4); flex: 1;">Generate Report Cards</button>` : ''}
+                </div>
             </div>
-            <div class="dashboard-grid" style="grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'};">
+            <div class="dashboard-grid mobile-stack" style="grid-template-columns: ${canEdit ? '1fr 2fr' : '1fr'}; gap: 2rem;">
                 ${canEdit ? `
                 <div class="glass-panel">
                     <h2 class="card-title">Enter Marks</h2>
@@ -2036,12 +2038,12 @@ const app = {
         const expData = [sumFees * 0.05, sumFees * 0.08, sumFees * 0.1, sumFees * 0.07, sumFees * 0.12, sumFees * 0.15];
 
         this.container.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
                 <div>
                     <h1>Academic Insights</h1>
                     <p>Welcome back, Administrator. Real-time metrics are active.</p>
                 </div>
-                <div style="display: flex; gap: 1rem;">
+                <div class="button-group" style="display: flex; gap: 1rem;">
                     <button class="btn-primary" onclick="app.exportAllData()" style="background: var(--success);">Full System Backup</button>
                     <button class="btn-primary" onclick="app.generateMinistryStats()" style="background: var(--secondary); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);">
                         Ministry Statistics
