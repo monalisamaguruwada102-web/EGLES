@@ -1,13 +1,12 @@
-const CACHE_NAME = 'egles-smis-v5';
+const CACHE_NAME = 'egles-smis-v-supabase';
 const urlsToCache = [
     '/',
     '/index.html',
-    '/style.css?v=5',
-    '/app_v1.js?v=5',
-    '/db.js?v=5',
+    '/style.css?v=supabase',
+    '/app_v1.js?v=supabase',
+    '/db.js?v=supabase',
     '/manifest.json',
-    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
 
 self.addEventListener('install', event => {
