@@ -522,9 +522,16 @@ app.delete('/api/bulk/:table', async (req, res) => {
 });
 
 app.get('/api/config', (req, res) => {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_KEY;
+    if (!url || !key) {
+        console.warn('⚠️ Client requested config but SUPABASE_URL/KEY are missing in environment');
+        return res.json({ error: 'Supabase credentials not configured on server', initialized: false });
+    }
     res.json({
-        supabaseUrl: process.env.SUPABASE_URL,
-        supabaseKey: process.env.SUPABASE_KEY
+        supabaseUrl: url,
+        supabaseKey: key,
+        initialized: true
     });
 });
 
