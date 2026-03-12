@@ -310,19 +310,19 @@ app.get('/api/:table', async (req, res) => {
     const { _sort, _order, _limit, ...filters } = req.query;
 
     try {
-        let sql = \`SELECT * FROM \${table}\`;
+        let sql = `SELECT * FROM ${table}`;
         const values = [];
         const conditions = [];
 
         let i = 1;
         for (const [key, value] of Object.entries(filters)) {
-            conditions.push(\`\${key} = $\${i++}\`);
+            conditions.push(`${key} = $${i++}`);
             values.push(value);
         }
         
         if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
-        if (_sort) sql += \` ORDER BY \${_sort} \${(_order || 'ASC').toUpperCase()}\`;
-        if (_limit) sql += \` LIMIT \${parseInt(_limit)}\`;
+        if (_sort) sql += ` ORDER BY ${_sort} ${(_order || 'ASC').toUpperCase()}`;
+        if (_limit) sql += ` LIMIT ${parseInt(_limit)}`;
 
         const result = await pool.query(sql, values);
         res.json(result.rows);
@@ -337,7 +337,7 @@ app.get('/api/:table/:id', async (req, res) => {
     const { table, id } = req.params;
     if (!validateTable(table, res)) return;
     try {
-        const result = await pool.query(\`SELECT * FROM \${table} WHERE id = $1\`, [id]);
+        const result = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [id]);
         if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
         res.json(result.rows[0]);
     } catch (err) {
@@ -357,8 +357,8 @@ app.post('/api/:table', async (req, res) => {
             for (const item of data) {
                 const keys = Object.keys(item);
                 const values = Object.values(item);
-                const placeholders = keys.map((_, i) => \`$\${i + 1}\`).join(', ');
-                const sql = \`INSERT INTO \${table} (\${keys.join(', ')}) VALUES (\${placeholders}) RETURNING *\`;
+                const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+                const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
                 const result = await pool.query(sql, values);
                 insertedRows.push(result.rows[0]);
             }
@@ -366,8 +366,8 @@ app.post('/api/:table', async (req, res) => {
         } else {
             const keys = Object.keys(data);
             const values = Object.values(data);
-            const placeholders = keys.map((_, i) => \`$\${i + 1}\`).join(', ');
-            const sql = \`INSERT INTO \${table} (\${keys.join(', ')}) VALUES (\${placeholders}) RETURNING *\`;
+            const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+            const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
             const result = await pool.query(sql, values);
             res.status(201).json(result.rows[0]);
         }
@@ -385,9 +385,9 @@ app.put('/api/:table/:id', async (req, res) => {
         const data = req.body;
         const keys = Object.keys(data);
         const values = Object.values(data);
-        const setClause = keys.map((k, i) => \`\${k} = $\${i + 1}\`).join(', ');
+        const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
         
-        const sql = \`UPDATE \${table} SET \${setClause} WHERE id = $\${keys.length + 1} RETURNING *\`;
+        const sql = `UPDATE ${table} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
         const result = await pool.query(sql, [...values, id]);
         res.json(result.rows[0]);
     } catch (err) {
@@ -400,7 +400,7 @@ app.delete('/api/:table/:id', async (req, res) => {
     const { table, id } = req.params;
     if (!validateTable(table, res)) return;
     try {
-        await pool.query(\`DELETE FROM \${table} WHERE id = $1\`, [id]);
+        await pool.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -416,5 +416,5 @@ app.get('/api/config', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(\`Egles SMIS server running on port \${port}\`);
+    console.log(`Egles SMIS server running on port ${port}`);
 });
