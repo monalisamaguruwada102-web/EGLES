@@ -25,7 +25,7 @@ app.use(express.static(__dirname)); // Serve frontend files
 
 // Initialize PostgreSQL Pool
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL || (console.error('DATABASE_URL is missing') && undefined),
     ssl: {
         rejectUnauthorized: false // Required for Render Postgres
     }
