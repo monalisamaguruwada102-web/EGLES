@@ -877,11 +877,10 @@ const app = {
         widget.style.cssText = 'position:fixed; bottom:2rem; left:2rem; z-index:9999;';
 
         const themes = [
-            { id: 'default', name: 'Dark', color: '#6366f1' },
+            { id: 'default', name: 'Cyber Glass', color: '#58a6ff' },
             { id: 'light', name: 'Light', color: '#ffffff' },
-            { id: 'blue-glow', name: 'Blue Glow', color: '#58a6ff' },
-            { id: 'high-contrast', name: 'High Contrast', color: '#ffff00' },
-            { id: 'solarized', name: 'Solarized', color: '#268bd2' }
+            { id: 'midnight', name: 'Midnight', color: '#020617' },
+            { id: 'aurora', name: 'Aurora', color: '#064e3b' }
         ];
 
         widget.innerHTML = `
@@ -980,7 +979,7 @@ const app = {
             if (visibleItems.length === 0) return '';
 
             return `
-            < div class="nav-group" >
+            <div class="nav-group">
                 <span class="nav-label">${group.label}</span>
                     ${visibleItems.map(item => `
                         <button class="nav-item ${item.id === 'dashboard' ? 'active' : ''}" onclick="app.navigate('${item.id}')">
@@ -988,7 +987,7 @@ const app = {
                         </button>
                     `).join('')
                 }
-                </div >
+            </div>
     `;
         }).join('');
     },
@@ -1080,7 +1079,7 @@ const app = {
         }
 
         list.innerHTML = notifications.map(n => `
-    < div class="notif-item ${n.read ? '' : 'unread'}" onclick = "app.markAsRead(${n.id})" >
+            <div class="notif-item ${n.read ? '' : 'unread'}" onclick="app.markAsRead(${n.id})">
                 <div class="notif-icon" style="background: ${this.getNotifColor(n.type)}">
                     ${this.getNotifEmoji(n.type)}
                 </div>
@@ -1089,7 +1088,7 @@ const app = {
                     <div class="notif-msg">${n.message}</div>
                     <div class="notif-time">${n.date}</div>
                 </div>
-            </div >
+            </div>
     `).join('');
     },
 
@@ -1136,7 +1135,7 @@ const app = {
         const modal = document.createElement('div');
         modal.className = 'modal-backdrop';
         modal.innerHTML = `
-    < div class="glass-panel auth-card" style = "width: 500px; padding: 3rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 24px; position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 2500;" >
+            <div class="glass-panel auth-card" style="width: 500px; padding: 3rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 24px; position: fixed; top: 50%; left: 50%; translate: -50% -50%; z-index: 2500;">
                 <h2 style="text-align: center;">Provision New Staff</h2>
                 <p style="text-align: center; margin-bottom: 2rem;">Register a teacher or administrator and generate their credentials.</p>
                 <form id="provision-form" onsubmit="app.handleProvision(event)">

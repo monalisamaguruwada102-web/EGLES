@@ -4,31 +4,59 @@
 
 /* --- CSS Variables --- */
 :root {
-    --primary: #6366f1;
-    --primary-bright: #818cf8;
-    --primary-glow: rgba(99, 102, 241, 0.35);
+    --primary: #58a6ff;
+    --primary-bright: #79c0ff;
+    --primary-glow: rgba(88, 166, 255, 0.4);
     --secondary: #ec4899;
-    --accent: #06b6d4;
+    --accent: #00f2ff;
     --success: #10b981;
     --success-glow: rgba(16, 185, 129, 0.15);
     --warning: #f59e0b;
     --danger: #ef4444;
 
-    /* Default Premium Dark Theme (Inspired by User Screenshot) */
-    --bg-main: #0a0f1e;
-    --bg-sidebar: rgba(10, 15, 30, 0.95);
-    --bg-card: rgba(15, 23, 42, 0.8);
-    --bg-gradient: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0a0f1e 100%);
+    /* Base Theme Variables (Cyber Glass) */
+    --bg-main: #060918;
+    --bg-sidebar: rgba(6, 9, 24, 0.7);
+    --bg-card: rgba(15, 23, 42, 0.6);
+    --bg-gradient: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #060918 100%);
     --glass-bg: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.08);
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
+    --text: #ffffff;
+    --text-muted: #8b949e;
     --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.6);
     --sidebar-width: 270px;
     --topbar-height: 70px;
-    --radius: 20px;
-    --radius-sm: 12px;
+    --radius: 24px;
+    --radius-sm: 14px;
+}
+
+/* Cyber Glass Theme - Applied as Default */
+body {
+    background: var(--bg-main);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.sidebar {
+    background: rgba(6, 9, 24, 0.7) !important;
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+}
+
+.nav-item.active {
+    background: linear-gradient(90deg, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05)) !important;
+    border: 1px solid rgba(88, 166, 255, 0.3) !important;
+    color: #79c0ff !important;
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.2) !important;
 }
 
 /* Specific Premium Dark Overrides */
