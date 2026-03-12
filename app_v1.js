@@ -77,6 +77,17 @@ const app = {
         return false;
     },
 
+    async getTeacherData() {
+        if (!this.currentUser || this.currentUser.role !== 'Teacher') return null;
+        const staff = await db.staff.toArray();
+        const me = staff.find(s => s.name === this.currentUser.name);
+        if (!me) return { classes: [], subjects: [] };
+        const subjects = await db.subjects.toArray();
+        const mySubjects = subjects.filter(s => s.teacherId === me.staffId);
+        const myClasses = [...new Set(mySubjects.map(s => s.class))];
+        return { staffId: me.staffId, classes: myClasses, subjects: mySubjects };
+    },
+
     showPublicPortal() {
         const sidebar = document.querySelector('.sidebar');
         const topbar = document.querySelector('.top-bar');
@@ -1845,12 +1856,19 @@ const app = {
     },
 
     async renderSubjects() {
-        const subjects = await db.subjects.toArray();
+        let subjects = await db.subjects.toArray();
         const teachers = await db.staff.where('role').equals('Teacher').toArray();
+        
+        const teacherData = await this.getTeacherData();
+        if (teacherData) {
+            subjects = teacherData.subjects;
+        }
 
+        const isAdmin = this.currentUser.role === 'Admin';
         this.container.innerHTML = `
-            <h1>Subject Management</h1>
-            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+            <h1>Subject ${isAdmin ? 'Management' : 'Assignments'}</h1>
+            <div class="mobile-stack" style="display: grid; grid-template-columns: ${isAdmin ? '1fr 2fr' : '1fr'}; gap: 2rem;">
+                ${isAdmin ? `
                 <form id="subj-form" class="glass-panel" style="margin: 0;">
                     <h2>Define Subject</h2>
                     <input type="text" id="subj-name" placeholder="Subject Name (e.g. Mathematics)" required>
@@ -1860,7 +1878,7 @@ const app = {
                         ${teachers.map(t => `<option value="${t.staffId}">${t.name}</option>`).join('')}
                     </select>
                     <button type="submit" class="btn-primary">Assign Subject</button>
-                </form>
+                </form>` : ''}
                 <div class="glass-panel" style="margin: 0; overflow-x: auto;">
                     <h2>Subject Allocations</h2>
                     <table style="width: 100%; border-collapse: collapse;">
@@ -1885,7 +1903,8 @@ const app = {
             </div>
         `;
 
-        document.getElementById('subj-form').onsubmit = async (e) => {
+        if (isAdmin) {
+            document.getElementById('subj-form').onsubmit = async (e) => {
             e.preventDefault();
             const subject = {
                 name: document.getElementById('subj-name').value,
@@ -1894,11 +1913,19 @@ const app = {
             };
             await db.subjects.add(subject);
             this.renderSubjects();
-        };
+            };
+        }
     },
 
     async renderStudents() {
-        const students = await db.students.toArray();
+        let students = await db.students.toArray();
+        
+        if (this.currentUser.role === 'Teacher') {
+            const teacherData = await this.getTeacherData();
+            if (teacherData) {
+                students = students.filter(s => teacherData.classes.includes(s.class));
+            }
+        }
         this.container.innerHTML = `
             <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>Student Directory</h1>
@@ -1958,15 +1985,29 @@ const app = {
 
         document.getElementById('reg-form').onsubmit = async (e) => {
             e.preventDefault();
-            const count = await db.students.count();
-            await db.students.add({
-                studentId: `EST${2026}${String(count + 1).padStart(3, '0')}`,
-                name: document.getElementById('s-name').value,
-                class: document.getElementById('s-class').value,
-                gender: document.getElementById('s-gender').value,
-                parentContact: document.getElementById('s-contact').value
-            });
-            this.renderStudents();
+            try {
+                this.showLoading(500);
+                const count = await db.students.count();
+                const timestamp = Date.now().toString().slice(-4);
+                const studentId = `EST${2026}${String(count + 1).padStart(3, '0')}${timestamp}`;
+                
+                await db.students.add({
+                    studentId: studentId,
+                    name: document.getElementById('s-name').value,
+                    class: document.getElementById('s-class').value,
+                    gender: document.getElementById('s-gender').value,
+                    parentContact: document.getElementById('s-contact').value
+                });
+                
+                document.getElementById('student-modal').classList.add('hidden');
+                alert(`Student registered successfully! ID: ${studentId}`);
+                this.renderStudents();
+            } catch (err) {
+                console.error("Registration Error:", err);
+                alert("Critical System Error: " + err.message);
+            } finally {
+                this.hideLoading();
+            }
         };
     },
 
@@ -1982,7 +2023,13 @@ const app = {
     },
 
     async renderAttendance() {
-        const students = await db.students.toArray();
+        let students = await db.students.toArray();
+        if (this.currentUser.role === 'Teacher') {
+            const teacherData = await this.getTeacherData();
+            if (teacherData) {
+                students = students.filter(s => teacherData.classes.includes(s.class));
+            }
+        }
         const today = new Date().toISOString().split('T')[0];
 
         this.container.innerHTML = `
@@ -2092,8 +2139,15 @@ const app = {
     },
 
     async renderExams() {
-        const students = await db.students.toArray();
-        const marks = await db.marks.toArray();
+        let students = await db.students.toArray();
+        let marks = await db.marks.toArray();
+        
+        const teacherData = await this.getTeacherData();
+        if (teacherData) {
+            students = students.filter(s => teacherData.classes.includes(s.class));
+            const mySubjectNames = teacherData.subjects.map(s => s.name);
+            marks = marks.filter(m => mySubjectNames.includes(m.subject) && students.some(s => s.studentId === m.studentId));
+        }
 
         const canEdit = this.canModify();
         this.container.innerHTML = `
@@ -2112,7 +2166,10 @@ const app = {
                             <option value="">Select Student</option>
                             ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
                         </select>
-                        <input type="text" id="m-subject" placeholder="Subject" required>
+                        <select id="m-subject" required>
+                            <option value="">Select Subject</option>
+                            ${teacherData ? teacherData.subjects.map(s => `<option value="${s.name}">${s.name} (${s.class})</option>`).join('') : '<option value="English">English</option><option value="Math">Math</option>'}
+                        </select>
                         <input type="number" id="m-score" placeholder="Score (%)" max="100" required>
                         <button type="submit" class="btn-primary" style="width: 100%; background: var(--secondary); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);">Assign Grade</button>
                     </form>
