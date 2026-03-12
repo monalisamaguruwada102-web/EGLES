@@ -3,6 +3,7 @@
    ============================================= */
 
 /* --- CSS Variables --- */
+/* Base Theme Variables (Cyber Glass) */
 :root {
     --primary: #58a6ff;
     --primary-bright: #79c0ff;
@@ -13,8 +14,6 @@
     --success-glow: rgba(16, 185, 129, 0.15);
     --warning: #f59e0b;
     --danger: #ef4444;
-
-    /* Base Theme Variables (Cyber Glass) */
     --bg-main: #060918;
     --bg-sidebar: rgba(6, 9, 24, 0.7);
     --bg-card: rgba(15, 23, 42, 0.6);
@@ -31,32 +30,37 @@
     --radius-sm: 14px;
 }
 
-/* Cyber Glass Theme - Applied as Default */
+/* Global Styles */
 body {
     background: var(--bg-main);
     background-image: var(--bg-gradient);
     background-attachment: fixed;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    transition: background 0.3s, color 0.3s;
 }
 
-.glass-panel {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+/* Cyber Glass default components (only apply when not other themes) */
+body:not(.light-theme):not(.midnight-theme):not(.aurora-theme) .glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-.sidebar {
-    background: rgba(6, 9, 24, 0.7) !important;
-    backdrop-filter: blur(30px) !important;
-    -webkit-backdrop-filter: blur(30px) !important;
+body:not(.light-theme):not(.midnight-theme):not(.aurora-theme) .sidebar {
+    background: rgba(6, 9, 24, 0.7);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
 }
 
-.nav-item.active {
-    background: linear-gradient(90deg, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05)) !important;
-    border: 1px solid rgba(88, 166, 255, 0.3) !important;
-    color: #79c0ff !important;
-    box-shadow: 0 0 20px rgba(88, 166, 255, 0.2) !important;
+body:not(.light-theme):not(.midnight-theme):not(.aurora-theme) .nav-item.active {
+    background: linear-gradient(90deg, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05));
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    color: #79c0ff;
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
 }
 
 /* Specific Premium Dark Overrides */

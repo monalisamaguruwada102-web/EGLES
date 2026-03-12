@@ -2,6 +2,29 @@ console.log("app.js loaded");
 const app = {
     container: document.getElementById('app-container'),
 
+    async showLoading(delay = 500) {
+        const loader = document.getElementById('global-loader');
+        if (loader) {
+            loader.style.display = 'block';
+            const bar = loader.querySelector('.progress-bar');
+            if (bar) bar.style.width = '30%';
+            setTimeout(() => { if (bar) bar.style.width = '100%'; }, 50);
+        }
+        return new Promise(resolve => setTimeout(resolve, delay));
+    },
+
+    hideLoading() {
+        const loader = document.getElementById('global-loader');
+        if (loader) {
+            const bar = loader.querySelector('.progress-bar');
+            if (bar) bar.style.width = '100%';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                if (bar) bar.style.width = '0%';
+            }, 300);
+        }
+    },
+
     openSidebar() {
         document.getElementById('sidebar')?.classList.add('open');
         document.getElementById('sidebar-overlay')?.classList.add('active');
@@ -30,9 +53,11 @@ const app = {
             }
             this.renderSidebar();
             this.updateHeaderUser();
+            await this.showLoading(800);
             this.renderDashboard();
             await this.checkSystemAlerts();
             await this.updateNotifBadge();
+            this.hideLoading();
         } else {
             // Show public portal by default (no login needed)
             this.showPublicPortal();
@@ -505,10 +530,16 @@ const app = {
         const myDiscipline = discipline.filter(d => d.studentId === user.studentId);
         const myHostelAssigned = hostelAssignments.find(ha => ha.studentId === user.studentId);
         const myHostel = myHostelAssigned ? hostels.find(h => h.id === myHostelAssigned.hostelId) : null;
+        const myTransportAssigned = transportAssignments.find(ta => ta.studentId === user.studentId);
+        const myTransport = myTransportAssigned ? transport.find(t => t.id === myTransportAssigned.routeId) : null;
         
         const totalPaid = myFees.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
+        const termFee = 1200; // Standard term fee
+        const balance = Math.max(0, termFee - totalPaid);
         const presentDays = myAttendance.filter(a => a.status === 'Present').length;
         const attendancePct = myAttendance.length ? Math.round((presentDays / myAttendance.length) * 100) : 0;
+        
+        const myHealth = health.find(h => h.studentId === user.studentId);
 
         const subjectMap = {};
         myMarks.forEach(m => {
@@ -548,12 +579,12 @@ const app = {
                             <div>
                                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
                                     <span style="background: var(--success-glow); color: var(--success); padding: 5px 15px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid var(--success-glow);">Active Status</span>
-                                    <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Grade 11 &bull; Science Stream</span>
+                                    <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Class: ${user.class || 'N/A'}</span>
                                 </div>
                                 <h1 style="margin: 0; font-size: 3rem; font-weight: 900; letter-spacing: -1.5px; background: linear-gradient(to bottom, #ffffff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${user.name}</h1>
                                 <div style="display: flex; gap: 2.5rem; margin-top: 1rem; color: var(--text-muted); font-size: 1.1rem;">
                                     <span><strong>STUDENT ID:</strong> <span style="color:var(--primary-bright); font-family: monospace;">${user.studentId}</span></span>
-                                    <span><strong>ENROLLED:</strong> ${new Date().getFullYear()}</span>
+                                    <span><strong>STATUS:</strong> <span style="color:var(--success); font-weight: 700;">REGULAR</span></span>
                                 </div>
                             </div>
                         </div>
@@ -611,12 +642,12 @@ const app = {
                                 <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
                                     <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">🚌 Mobility</h4>
                                     ${myTransport ? `
-                                        <div style="font-size: 1.2rem; font-weight: 700;">${myTransport.routeName}</div>
-                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Pickup: ${myTransport.pickupTime}</div>
-                                        <div style="margin-top: 1rem; font-size: 0.8rem; font-weight: 600; color: var(--success);">• Live: On Route</div>
+                                        <div style="font-size: 1.2rem; font-weight: 700;">${myTransport.route}</div>
+                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Bus: ${myTransport.busNo}</div>
+                                        <div style="margin-top: 1rem; font-size: 0.8rem; font-weight: 600; color: var(--success);">• Driver: ${myTransport.driver}</div>
                                     ` : `
-                                        <div style="color: var(--text-muted); font-size: 0.9rem;">Private Transport</div>
-                                        <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">Parking Permit: <span style="color: var(--text);">EGL-993</span></div>
+                                        <div style="color: var(--text-muted); font-size: 0.9rem;">No active routes.</div>
+                                        <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">Please visit the Transport Office for registration.</div>
                                     `}
                                 </div>
 
@@ -722,8 +753,8 @@ const app = {
                             <h3 style="margin-bottom:1.5rem; display: flex; align-items: center; gap: 0.5rem;">💳 Fee Statement</h3>
                             <div style="background: rgba(0,0,0,0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
                                 <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Balance Remaining</div>
-                                <div style="font-size: 2.5rem; font-weight: 900; color: var(--success);">$0.00</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No upcoming installments.</div>
+                                <div style="font-size: 2.5rem; font-weight: 900; color: ${balance > 0 ? 'var(--danger)' : 'var(--success)'};">$${balance.toFixed(2)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">${balance > 0 ? 'Urgent attention required.' : 'Account settled.'}</div>
                             </div>
                             ${myFees.length === 0
                 ? '<div style="text-align:center; padding: 1rem;"><div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎉</div><p style="color: var(--success); font-weight: 600; font-size: 0.9rem;">Excellent! Your account is fully settled.</p></div>'
@@ -948,7 +979,6 @@ const app = {
                 label: 'Academic', items: [
                     { id: 'subjects', name: 'Subjects', roles: ['Admin', 'Teacher'] },
                     { id: 'exams', name: 'Examinations', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
-                    { id: 'timetable', name: 'Timetable', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
                     { id: 'attendance', name: 'Attendance', roles: ['Admin', 'Teacher'] },
                     { id: 'library', name: 'Library', roles: ['Admin', 'Teacher', 'Parent', 'Student'] },
                     { id: 'discipline', name: 'Discipline', roles: ['Admin', 'Teacher'] },
@@ -960,7 +990,6 @@ const app = {
                     { id: 'fees', name: 'Fees Management', roles: ['Admin', 'Parent'] },
                     { id: 'payroll', name: 'Staff Payroll', roles: ['Admin'] },
                     { id: 'inventory', name: 'Inventory & Assets', roles: ['Admin'] },
-                    { id: 'pos', name: 'Tuckshop POS', roles: ['Admin', 'Staff'] },
                     { id: 'expenses', name: 'Expenses', roles: ['Admin'] },
                     { id: 'hostels', name: 'Hostels', roles: ['Admin', 'Parent'] },
                     { id: 'transport', name: 'Transport', roles: ['Admin', 'Parent'] }
@@ -1203,17 +1232,23 @@ const app = {
         // Update sidebar active state
         document.querySelectorAll('.nav-item').forEach(btn => {
             btn.classList.remove('active');
-            const btnText = btn.querySelector('span').innerText.toLowerCase();
-            const pageLower = page.toLowerCase();
-            if (btnText === pageLower || (pageLower === 'pos' && btnText === 'tuckshop pos') || (pageLower === 'exams' && btnText === 'examinations')) {
-                btn.classList.add('active');
+            const span = btn.querySelector('span');
+            if (span) {
+                const btnText = span.innerText.toLowerCase();
+                const pageLower = page.toLowerCase();
+                if (btnText === pageLower || (pageLower === 'exams' && btnText === 'examinations')) {
+                    btn.classList.add('active');
+                }
             }
         });
 
+        await this.showLoading(400);
+
         this.container.innerHTML = `
-            <div class="loader">
+            <div class="page-loading-overlay">
                 <div class="spinner"></div>
-                <p>Loading ${page.charAt(0).toUpperCase() + page.slice(1)}...</p>
+                <h2>Initializing ${page.charAt(0).toUpperCase() + page.slice(1)}</h2>
+                <p>Establishing secure connection to database...</p>
             </div>
         `;
 
@@ -1233,8 +1268,14 @@ const app = {
             case 'exams':
                 await this.renderExams();
                 break;
-            case 'timetable':
-                await this.renderTimetable();
+            case 'transport':
+                await this.renderTransport();
+                break;
+            case 'notices':
+                await this.renderNotices();
+                break;
+            case 'resources':
+                await this.renderResources();
                 break;
             case 'attendance':
                 await this.renderAttendance();
@@ -1257,94 +1298,18 @@ const app = {
             case 'inventory':
                 await this.renderInventory();
                 break;
-            case 'pos':
-                await this.renderPOS();
-                break;
             case 'expenses':
                 await this.renderExpenses();
                 break;
             case 'hostels':
                 await this.renderHostels();
                 break;
-            case 'transport':
-                await this.renderTransport();
-                break;
-            case 'notices':
-                await this.renderNotices();
-                break;
-            case 'resources':
-                await this.renderResources();
-                break;
             default:
                 this.container.innerHTML = '<div class="glass-panel"><h1>404 Page Not Found</h1></div>';
         }
+        this.hideLoading();
     },
 
-    async renderTimetable() {
-        const slots = await db.timetable.toArray();
-        const subjects = await db.subjects.toArray();
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        const periods = ['08:00 - 09:00', '09:00 - 10:00', '10:30 - 11:30', '11:30 - 12:30', '14:00 - 15:00'];
-
-        const canEdit = this.canModify();
-        this.container.innerHTML = `
-            <h1>Timetable ${canEdit ? 'Generator' : 'View'}</h1>
-            ${canEdit ? `
-            <div class="glass-panel" style="margin-bottom: 2rem;">
-                <h2>Add Schedule</h2>
-                <form id="tt-form" class="mobile-stack" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <input type="text" id="tt-class" placeholder="Class (e.g. Form 1A)" required style="flex: 1;">
-                    <select id="tt-day" required style="flex: 1;">
-                        ${days.map(d => `<option value="${d}">${d}</option>`).join('')}
-                    </select>
-                    <select id="tt-period" required style="flex: 1;">
-                        ${periods.map(p => `<option value="${p}">${p}</option>`).join('')}
-                    </select>
-                    <select id="tt-subj" required style="flex: 1;">
-                        ${subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
-                    </select>
-                    <button type="submit" class="btn-primary">Add Entry</button>
-                </form>
-            </div>` : ''}
-            <div class="glass-panel" style="overflow-x: auto;">
-                <h2>Visual Schedule</h2>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            <th style="padding: 1rem; border: 1px solid var(--glass-border);">Period</th>
-                            ${days.map(d => `<th style="padding: 1rem; border: 1px solid var(--glass-border);">${d}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${periods.map(p => `
-                            <tr>
-                                <td style="padding: 1rem; border: 1px solid var(--glass-border); font-weight: 600;">${p}</td>
-                                ${days.map(d => {
-            const entry = slots.find(s => s.day === d && s.period === p);
-            return `<td style="padding: 1rem; border: 1px solid var(--glass-border); background: ${entry ? 'var(--glass-bg)' : ''};">
-                                        ${entry ? `<div style="font-weight: 700;">${entry.subject}</div><div style="font-size: 0.8rem; color: var(--text-muted);">${entry.class}</div>` : '-'}
-                                    </td>`;
-        }).join('')}
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        if (canEdit) {
-            document.getElementById('tt-form').onsubmit = async (e) => {
-                e.preventDefault();
-                await db.timetable.add({
-                    class: document.getElementById('tt-class').value,
-                    day: document.getElementById('tt-day').value,
-                    period: document.getElementById('tt-period').value,
-                    subject: document.getElementById('tt-subj').value
-                });
-                this.renderTimetable();
-            };
-        }
-    },
 
     async renderLibrary() {
         const books = await db.library.toArray();
@@ -1550,9 +1515,11 @@ const app = {
     },
 
     toggleTheme() {
-        document.body.classList.toggle('light-theme');
-        const isLight = document.body.classList.contains('light-theme');
-        document.getElementById('theme-toggle').innerText = isLight ? '🌙' : '🌓';
+        const current = localStorage.getItem('egles_theme') || 'default';
+        const next = current === 'light' ? 'default' : 'light';
+        this.setTheme(next);
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) toggleBtn.innerText = next === 'light' ? '🌙' : '🌓';
     },
 
     async renderPayroll() {
@@ -1573,7 +1540,8 @@ const app = {
                     <input type="number" id="p-salary" placeholder="Basic Salary" required>
                     <input type="number" id="p-bonus" placeholder="Bonus" value="0">
                     <input type="number" id="p-deduct" placeholder="Deductions" value="0">
-                    <button type="submit" class="btn-primary" style="width: 100%;">Generate Payslip</button>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Process Payment</button>
+                    <button type="button" class="btn-primary" style="width: 100%; background: var(--success); margin-top: 1rem;" onclick="app.printBulkPayslips()">Print All Payslips</button>
                 </form>
                 <div class="glass-panel" style="margin: 0;">
                     <h2>Payroll Log - ${month} ${year}</h2>
@@ -1591,6 +1559,7 @@ const app = {
                                     <td style="padding: 1rem;">${staff.find(s => s.staffId === p.staffId)?.name || p.staffId}</td>
                                     <td style="padding: 1rem;">$${(p.salary + p.bonus - p.deductions).toFixed(2)}</td>
                                     <td style="padding: 1rem;"><span style="color: var(--success);">Paid</span></td>
+                                    <td style="padding: 1rem;"><button onclick="app.printSinglePayslip('${p.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer;">Print PDF</button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -1614,58 +1583,6 @@ const app = {
         };
     },
 
-    async renderPOS() {
-        const sales = await db.pos.toArray();
-        const totalSales = sales.reduce((acc, s) => acc + (s.price * s.quantity), 0);
-
-        this.container.innerHTML = `
-            <h1>Tuckshop POS Terminal</h1>
-            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
-                <form id="pos-form" class="glass-panel" style="margin: 0;">
-                    <h2>New Transaction</h2>
-                    <input type="text" id="pos-item" placeholder="Item Name" required>
-                    <input type="number" id="pos-price" placeholder="Price" step="0.01" required>
-                    <input type="number" id="pos-qty" placeholder="Quantity" value="1" required>
-                    <button type="submit" class="btn-primary" style="width: 100%; background: var(--accent);">Complete Sale</button>
-                </form>
-                <div class="glass-panel" style="margin: 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                        <h2>Daily Sales</h2>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">$${totalSales.toFixed(2)}</div>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="text-align: left;">
-                                <th style="padding: 1rem;">Item</th>
-                                <th style="padding: 1rem;">Qty</th>
-                                <th style="padding: 1rem;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${sales.map(s => `
-                                <tr>
-                                    <td style="padding: 1rem;">${s.itemName}</td>
-                                    <td style="padding: 1rem;">${s.quantity}</td>
-                                    <td style="padding: 1rem;">$${(s.price * s.quantity).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('pos-form').onsubmit = async (e) => {
-            e.preventDefault();
-            await db.pos.add({
-                itemName: document.getElementById('pos-item').value,
-                price: parseFloat(document.getElementById('pos-price').value),
-                quantity: parseInt(document.getElementById('pos-qty').value),
-                date: new Date().toLocaleDateString()
-            });
-            this.renderPOS();
-        };
-    },
 
     async renderExpenses() {
         const expenses = await db.expenses.toArray();
@@ -2069,7 +1986,10 @@ const app = {
             <div class="glass-panel" style="margin: 0;">
                 <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <h2>Record Daily Attendance</h2>
-                    <input type="date" id="att-date" value="${today}" style="width: auto; margin: 0; min-width: 150px;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <input type="date" id="att-date" value="${today}" style="width: auto; margin: 0; min-width: 150px;">
+                        <button class="btn-primary" onclick="app.printRegister()">Print Daily Register</button>
+                    </div>
                 </div>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
@@ -2260,6 +2180,11 @@ const app = {
     async generateReport() {
         const studentId = document.getElementById('report-student').value;
         const student = await db.students.where('studentId').equals(studentId).first();
+        if (!student) {
+            alert("Student record not found in database.");
+            return;
+        }
+        await this.showLoading(1500); // Simulate PDF Generation
         const studentMarks = await db.marks.where('studentId').equals(studentId).toArray();
 
         const avgScore = studentMarks.length > 0 ? (studentMarks.reduce((acc, m) => acc + m.score, 0) / studentMarks.length).toFixed(1) : 0;
@@ -2333,9 +2258,9 @@ const app = {
                 </div>
 
                 <div id="report-actions" style="margin-top: 60px; border-top: 1px solid #cbd5e1; padding-top: 20px; display: flex; gap: 1rem; justify-content: center;">
-                    <button class="btn-primary" style="background: #1e293b; color: white;" onclick="window.print()">Print to PDF</button>
-                    <button class="btn-primary" style="background: var(--accent);" onclick="alert('SMS SENT: Academic report for ${student.name} is now available.')">Notify Parent</button>
-                    <button class="btn-primary" style="background: var(--danger);" onclick="app.navigate('exams')">Back to Exams</button>
+                    <button class="btn-primary" style="background: #1e293b; color: white;" onclick="window.print()">Download PDF</button>
+                    <button class="btn-primary" style="background: var(--accent);" onclick="alert('SMS & EMAIL SENT: Academic report for ${student.name} has been securely delivered to parents.')">Send to Parent</button>
+                    <button class="btn-primary" style="background: var(--danger);" onclick="app.navigate('exams')">Exit Preview</button>
                 </div>
             </div>
             <style>
@@ -3002,9 +2927,9 @@ const app = {
                         <tbody>
                             ${routes.map(r => `
                                 <tr>
-                                    <td style="padding: 1rem;">${r.route}</td>
-                                    <td style="padding: 1rem;">${r.busNo}</td>
-                                    <td style="padding: 1rem;">${r.driver}</td>
+                                    <td style="padding: 1rem;">${r.route || 'Unknown'}</td>
+                                    <td style="padding: 1rem;">${r.busNo || 'N/A'}</td>
+                                    <td style="padding: 1rem;">${r.driver || 'Staff'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -3141,29 +3066,98 @@ const app = {
         document.body.appendChild(modal);
     },
 
-    viewIDCard(id) {
-        db.students.get(parseInt(id)).then(student => {
-            this.container.innerHTML = `
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh;">
-                    <div class="glass-panel" style="width: 350px; height: 500px; display: flex; flex-direction: column; align-items: center; border: 2px solid var(--primary); background: var(--bg-gradient); padding: 0;">
-                        <div style="background: var(--primary); width: 100%; padding: 1.5rem; text-align: center; border-radius: 20px 20px 0 0;">
-                            <h2 style="margin: 0; font-size: 1.2rem; color: white;">EGLES SECONDARY SCHOOL</h2>
-                            <span style="font-size: 0.7rem; color: rgba(255,255,255,0.8);">Student Identification Card</span>
-                        </div>
-                        <div style="width: 150px; height: 150px; border-radius: 50%; background: var(--glass-bg); margin: 2rem 0; border: 4px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 4rem;">👤</div>
-                        <h2 style="margin-bottom: 0.5rem; color: white;">${student.name}</h2>
-                        <p style="color: var(--primary-bright); font-weight: 700;">STUDENT ID: ${student.studentId}</p>
-                        <p style="margin-top: 1rem; font-weight: 600; color: white;">CLASS: ${student.class}</p>
-                        <div style="margin-top: auto; padding: 1rem; width: 100%; text-align: center; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--glass-border);">
-                            Official School ID - Valid for 2026 Academic Year
-                        </div>
+    async viewIDCard(id) {
+        const student = await db.students.get(parseInt(id));
+        if (!student) {
+            alert("This student profile is no longer in the system.");
+            return;
+        }
+        await this.showLoading(1000);
+        this.container.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh;">
+                <div class="glass-panel" style="width: 350px; height: 500px; display: flex; flex-direction: column; align-items: center; border: 2px solid var(--primary); background: var(--bg-gradient); padding: 0; box-shadow: var(--shadow-lg);">
+                    <div style="background: var(--primary); width: 100%; padding: 1.5rem; text-align: center; border-radius: 20px 20px 0 0;">
+                        <h2 style="margin: 0; font-size: 1.2rem; color: white;">EGLES SECONDARY SCHOOL</h2>
+                        <span style="font-size: 0.7rem; color: rgba(255,255,255,0.8);">Student Identification Card</span>
                     </div>
-                    <button class="btn-primary" style="margin-top: 2rem;" onclick="window.print()">Print ID Card</button>
-                    <button class="btn-primary" style="background: var(--danger); margin-top: 1rem;" onclick="app.navigate('students')">Back to Registry</button>
+                    <div style="width: 150px; height: 150px; border-radius: 50%; background: var(--bg-card); margin: 2rem 0; border: 4px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 4rem; overflow: hidden;">
+                         ${student.name.charAt(0)}
+                    </div>
+                    <h2 style="margin-bottom: 0.5rem; color: white;">${student.name}</h2>
+                    <p style="color: var(--primary-bright); font-weight: 700;">STUDENT ID: ${student.studentId}</p>
+                    <p style="margin-top: 1rem; font-weight: 600; color: white;">CLASS: ${student.class}</p>
+                    <div style="margin-top: auto; padding: 1.5rem; width: 100%; text-align: center; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--glass-border);">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${student.studentId}" style="width: 50px; margin-bottom: 0.5rem; opacity: 0.6;">
+                        <div>Official School ID - Valid for 2026 Academic Year</div>
+                    </div>
                 </div>
-                <style>@media print { .btn-primary { display: none; } .glass-panel { margin: 0; box-shadow: none; border: 1px solid #000; } body { background: white; } }</style>
-            `;
-        });
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button class="btn-primary" onclick="window.print()">Print ID PDF</button>
+                    <button class="btn-primary" style="background: var(--danger);" onclick="app.navigate('students')">Close ID</button>
+                </div>
+            </div>
+        `;
+    },
+
+    async printRegister() {
+        const students = await db.students.toArray();
+        const date = document.getElementById('att-date').value;
+        const html = `
+            <div class="print-container">
+                <h1 style="text-align:center;">EGLES SECONDARY SCHOOL - DAILY REGISTER</h1>
+                <p style="text-align:center;">DATE: ${date} | Total Students: ${students.length}</p>
+                <table>
+                    <thead>
+                        <tr><th>Student Name</th><th>Class</th><th>Signature / Status</th></tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => `<tr><td>${s.name}</td><td>${s.class}</td><td></td></tr>`).join('')}
+                    </tbody>
+                </table>
+                <div style="margin-top:40px; border-top: 1px solid #000; width: 200px; padding-top: 5px;">Teacher Signature</div>
+            </div>
+        `;
+        const oldContent = this.container.innerHTML;
+        this.container.innerHTML = html;
+        window.print();
+        this.container.innerHTML = oldContent;
+    },
+
+    async printSinglePayslip(id) {
+        const p = await db.payroll.get(parseInt(id));
+        const s = await db.staff.where('staffId').equals(p.staffId).first();
+        await this.showLoading(1200);
+        const html = `
+            <div class="print-container" style="background:white; color:black; padding:40px; border:2px solid #000;">
+                <h2 style="text-align:center; margin-bottom:0;">EGLES SECONDARY SCHOOL</h2>
+                <h3 style="text-align:center; margin-top:5px;">OFFICIAL PAYSLIP</h3>
+                <hr>
+                <div style="display:flex; justify-content:space-between; margin:20px 0;">
+                    <div>
+                        <p><strong>Staff Name:</strong> ${s.name}</p>
+                        <p><strong>Designation:</strong> ${s.role}</p>
+                        <p><strong>Employee ID:</strong> ${p.staffId}</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <p><strong>Month:</strong> ${p.month} ${p.year}</p>
+                        <p><strong>Pay Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    </div>
+                </div>
+                <table style="width:100%; border:1px solid #000;">
+                    <tr><td style="padding:10px;">Basic Salary</td><td style="padding:10px;text-align:right;">$${p.salary.toFixed(2)}</td></tr>
+                    <tr><td style="padding:10px;">Allowances/Bonus</td><td style="padding:10px;text-align:right;">$${p.bonus.toFixed(2)}</td></tr>
+                    <tr><td style="padding:10px;">Deductions</td><td style="padding:10px;text-align:right;">($${p.deductions.toFixed(2)})</td></tr>
+                    <tr style="font-weight:bold; background:#eee;"><td style="padding:10px;">NET SALARY</td><td style="padding:10px;text-align:right;">$${(p.salary + p.bonus - p.deductions).toFixed(2)}</td></tr>
+                </table>
+                <div style="margin-top:50px; text-align:right;">
+                    <p style="border-top:1px solid #000; display:inline-block; padding-top:5px; width:200px;">Bursar Signature</p>
+                </div>
+            </div>
+        `;
+        const oldContent = this.container.innerHTML;
+        this.container.innerHTML = html;
+        window.print();
+        this.container.innerHTML = oldContent;
     }
 };
 
