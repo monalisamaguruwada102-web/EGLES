@@ -1,23 +1,4 @@
 const API_URL = '/api';
-let supabaseClient = null;
-
-// Initialize Supabase from backend config
-async function initSupabase() {
-    try {
-        const res = await fetch(`${API_URL}/config`);
-        const config = await res.json();
-        if (config.supabaseUrl && config.supabaseKey && window.supabase) {
-            supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
-            console.log('☁️ Frontend Supabase initialized');
-        } else if (!window.supabase) {
-            console.warn('⚠️ Supabase JS library not loaded');
-        }
-    } catch (err) {
-        console.warn('⚠️ Supabase frontend initialization failed:', err.message);
-    }
-}
-
-initSupabase();
 
 class QueryBuilder {
     constructor(tableName, key = null) {
@@ -57,30 +38,6 @@ class QueryBuilder {
     }
 
     async toArray() {
-        // Cloud-First: Supabase
-        if (supabaseClient) {
-            try {
-                let query = supabaseClient.from(this.tableName).select('*');
-                for (const [key, value] of Object.entries(this.conditions)) {
-                    query = query.eq(key, value);
-                }
-                if (this.isReverse) {
-                    query = query.order('id', { ascending: false });
-                }
-                if (this.limitCount) {
-                    query = query.limit(this.limitCount);
-                }
-                const { data, error } = await query;
-                if (!error && data) {
-                    return this.filterFunc ? data.filter(this.filterFunc) : data;
-                }
-                console.error(`Supabase query failed for ${this.tableName}:`, error);
-            } catch (err) {
-                console.warn(`Supabase fallback for ${this.tableName}:`, err.message);
-            }
-        }
-
-        // Local Fallback: Express API
         const params = { ...this.conditions };
         if (this.isReverse) {
             params._sort = 'id';
@@ -143,48 +100,22 @@ class TableProxy {
     }
 
     async get(id) {
-        // Cloud-First
-        if (supabaseClient) {
-            try {
-                const { data, error } = await supabaseClient.from(this.tableName).select('*').eq('id', id).single();
-                if (!error && data) return data;
-            } catch (err) { }
-        }
         const res = await fetch(`${API_URL}/${this.tableName}/${id}`);
         if (!res.ok) return undefined;
         return await res.json();
     }
 
     async add(data) {
-        // Double Write: Supabase + Local API
-        let cloudResult = null;
-        if (supabaseClient) {
-            try {
-                const { data: inserted, error } = await supabaseClient.from(this.tableName).insert(data).select().single();
-                if (!error) cloudResult = inserted;
-            } catch (err) {
-                console.error('Supabase add failed:', err);
-            }
-        }
-
         const res = await fetch(`${API_URL}/${this.tableName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        const localResult = await res.json();
-        return cloudResult || localResult;
+        return await res.json();
     }
 
     async put(data) {
         if (!data.id) return this.add(data);
-
-        if (supabaseClient) {
-            try {
-                await supabaseClient.from(this.tableName).upsert(data);
-            } catch (err) { }
-        }
-
         const res = await fetch(`${API_URL}/${this.tableName}/${data.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -200,11 +131,6 @@ class TableProxy {
     }
 
     async delete(id) {
-        if (supabaseClient) {
-            try {
-                await supabaseClient.from(this.tableName).delete().eq('id', id);
-            } catch (err) { }
-        }
         await fetch(`${API_URL}/${this.tableName}/${id}`, { method: 'DELETE' });
     }
 
@@ -247,4 +173,4 @@ const db = {
     publicTestimonials: new TableProxy('public_testimonials')
 };
 
-console.log("Premium Hybrid Cloud-Sync DB initialized");
+console.log("PostgreSQL SMIS DB initialized");

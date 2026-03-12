@@ -3,30 +3,23 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Supabase Configuration (Optional Sync)
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
-
-if (supabase) {
-    console.log('☁️ Supabase client initialized for sync');
-} else {
-    console.warn('⚠️ Supabase credentials missing. Sync disabled.');
-}
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname)); // Serve frontend files
 
 // Initialize PostgreSQL Pool
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+    console.error('❌ FATAL: DATABASE_URL is not defined in environment variables.');
+}
+
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || (console.error('DATABASE_URL is missing') && undefined),
-    ssl: {
+    connectionString,
+    ssl: (connectionString && connectionString.includes('localhost')) ? false : {
         rejectUnauthorized: false // Required for Render Postgres
     }
 });
@@ -309,42 +302,6 @@ function validateTable(table, res) {
     return true;
 }
 
-// Helper: Sync data to Supabase (Optional)
-async function syncToSupabase(table, data, method = 'upsert', id = null) {
-    if (!supabase) return;
-    try {
-        let result;
-        if (method === 'upsert') {
-            result = await supabase.from(table).upsert(data);
-        } else if (method === 'delete') {
-            result = await supabase.from(table).delete().eq('id', id);
-        }
-        if (result.error) throw result.error;
-    } catch (err) {
-        console.error(`❌ Supabase sync failed for ${table}:`, err.message);
-    }
-}
-
-// Startup Sync: Upload all local data to Supabase to ensure cloud is up to date
-async function startupSync() {
-    if (!supabase) return;
-    console.log('🔄 Starting full database sync to cloud...');
-    for (const table of ALLOWED_TABLES) {
-        try {
-            const { rows } = await pool.query(`SELECT * FROM ${table}`);
-            if (rows.length > 0) {
-                const { error } = await supabase.from(table).upsert(rows);
-                if (error) console.error(`⚠️ Sync failed for ${table}:`, error.message);
-            }
-        } catch (err) {
-            console.error(`⚠️ Could not sync table ${table}:`, err.message);
-        }
-    }
-    console.log('✅ Startup sync complete');
-}
-
-startupSync();
-
 // GET all rows with optional filter params
 app.get('/api/:table', async (req, res) => {
     const { table } = req.params;
@@ -352,44 +309,20 @@ app.get('/api/:table', async (req, res) => {
 
     const { _sort, _order, _limit, ...filters } = req.query;
 
-    // Cloud-First: Attempt Supabase fetch
-    if (supabase) {
-        try {
-            let query = supabase.from(table).select('*');
-            for (const [key, value] of Object.entries(filters)) {
-                query = query.eq(key, value);
-            }
-            if (_sort) {
-                query = query.order(_sort, { ascending: (_order || 'asc').toLowerCase() === 'asc' });
-            }
-            if (_limit) {
-                query = query.limit(parseInt(_limit));
-            }
-            const { data, error } = await query;
-            if (!error && data) {
-                return res.json(data);
-            }
-            if (error) console.error(`⚠️ Supabase fetch error for ${table}:`, error.message);
-        } catch (err) {
-            console.error(`⚠️ Supabase connection error:`, err.message);
-        }
-    }
-
-    // Local Fallback: PostgreSQL
     try {
-        let sql = `SELECT * FROM ${table}`;
+        let sql = \`SELECT * FROM \${table}\`;
         const values = [];
         const conditions = [];
 
         let i = 1;
         for (const [key, value] of Object.entries(filters)) {
-            conditions.push(`${key} = $${i++}`);
+            conditions.push(\`\${key} = $\${i++}\`);
             values.push(value);
         }
         
         if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
-        if (_sort) sql += ` ORDER BY ${_sort} ${(_order || 'ASC').toUpperCase()}`;
-        if (_limit) sql += ` LIMIT ${parseInt(_limit)}`;
+        if (_sort) sql += \` ORDER BY \${_sort} \${(_order || 'ASC').toUpperCase()}\`;
+        if (_limit) sql += \` LIMIT \${parseInt(_limit)}\`;
 
         const result = await pool.query(sql, values);
         res.json(result.rows);
@@ -404,7 +337,7 @@ app.get('/api/:table/:id', async (req, res) => {
     const { table, id } = req.params;
     if (!validateTable(table, res)) return;
     try {
-        const result = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [id]);
+        const result = await pool.query(\`SELECT * FROM \${table} WHERE id = $1\`, [id]);
         if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
         res.json(result.rows[0]);
     } catch (err) {
@@ -424,28 +357,19 @@ app.post('/api/:table', async (req, res) => {
             for (const item of data) {
                 const keys = Object.keys(item);
                 const values = Object.values(item);
-                const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-                const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
+                const placeholders = keys.map((_, i) => \`$\${i + 1}\`).join(', ');
+                const sql = \`INSERT INTO \${table} (\${keys.join(', ')}) VALUES (\${placeholders}) RETURNING *\`;
                 const result = await pool.query(sql, values);
-                const row = result.rows[0];
-                insertedRows.push(row);
-                // Async Sync to Supabase
-                syncToSupabase(table, row);
+                insertedRows.push(result.rows[0]);
             }
             res.status(201).json(insertedRows);
         } else {
             const keys = Object.keys(data);
             const values = Object.values(data);
-            const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-            const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-            
+            const placeholders = keys.map((_, i) => \`$\${i + 1}\`).join(', ');
+            const sql = \`INSERT INTO \${table} (\${keys.join(', ')}) VALUES (\${placeholders}) RETURNING *\`;
             const result = await pool.query(sql, values);
-            const row = result.rows[0];
-
-            // Async Sync to Supabase
-            syncToSupabase(table, row);
-
-            res.status(201).json(row);
+            res.status(201).json(result.rows[0]);
         }
     } catch (err) {
         console.error(err.message);
@@ -461,45 +385,11 @@ app.put('/api/:table/:id', async (req, res) => {
         const data = req.body;
         const keys = Object.keys(data);
         const values = Object.values(data);
-        const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+        const setClause = keys.map((k, i) => \`\${k} = $\${i + 1}\`).join(', ');
         
-        const sql = `UPDATE ${table} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
+        const sql = \`UPDATE \${table} SET \${setClause} WHERE id = $\${keys.length + 1} RETURNING *\`;
         const result = await pool.query(sql, [...values, id]);
-        const row = result.rows[0];
-
-        // Async Sync to Supabase
-        syncToSupabase(table, row);
-
-        res.json(row);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// PUT bulk update with query filters
-app.put('/api/bulk/:table', async (req, res) => {
-    const { table } = req.params;
-    if (!validateTable(table, res)) return;
-    const filters = req.query;
-    const updateData = req.body;
-    try {
-        const setKeys = Object.keys(updateData);
-        const setValues = Object.values(updateData);
-        const setClause = setKeys.map((k, i) => `${k} = $${i + 1}`).join(', ');
-
-        const whereKeys = Object.keys(filters);
-        const whereValues = Object.values(filters);
-        const whereClause = whereKeys.map((k, i) => `${k} = $${setKeys.length + i + 1}`).join(' AND ');
-
-        const sql = `UPDATE ${table} SET ${setClause} WHERE ${whereClause} RETURNING *`;
-        const result = await pool.query(sql, [...setValues, ...whereValues]);
-
-        // Sync affected rows to Supabase
-        if (result.rows.length > 0) {
-            syncToSupabase(table, result.rows);
-        }
-
-        res.json({ updated: result.rowCount });
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -510,58 +400,21 @@ app.delete('/api/:table/:id', async (req, res) => {
     const { table, id } = req.params;
     if (!validateTable(table, res)) return;
     try {
-        await pool.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
-
-        // Async Sync to Supabase
-        syncToSupabase(table, null, 'delete', id);
-
+        await pool.query(\`DELETE FROM \${table} WHERE id = $1\`, [id]);
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// DELETE bulk with query filters
-app.delete('/api/bulk/:table', async (req, res) => {
-    const { table } = req.params;
-    if (!validateTable(table, res)) return;
-    const filters = req.query;
-    try {
-        let result;
-        if (Object.keys(filters).length === 0) {
-            // Delete all in Supabase first (careful!)
-            if (supabase) await supabase.from(table).delete().neq('id', 0); // Supabase delete all
-            result = await pool.query(`DELETE FROM ${table}`);
-        } else {
-            const keys = Object.keys(filters);
-            const values = Object.values(filters);
-            const whereClause = keys.map((k, i) => `${k} = $${i + 1}`).join(' AND ');
-
-            // Sync delete to Supabase
-            if (supabase) {
-                let query = supabase.from(table).delete();
-                for (const [key, value] of Object.entries(filters)) {
-                    query = query.eq(key, value);
-                }
-                await query;
-            }
-
-            result = await pool.query(`DELETE FROM ${table} WHERE ${whereClause}`, values);
-        }
-        res.json({ deleted: result.rowCount });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
+// Config route for frontend
 app.get('/api/config', (req, res) => {
     res.json({
-        supabaseUrl: process.env.SUPABASE_URL,
-        supabaseKey: process.env.SUPABASE_KEY,
-        initialized: !!(process.env.SUPABASE_URL && process.env.SUPABASE_KEY)
+        database: 'PostgreSQL',
+        initialized: true
     });
 });
 
 app.listen(port, () => {
-    console.log(`Egles SMIS server running on port ${port}`);
+    console.log(\`Egles SMIS server running on port \${port}\`);
 });
