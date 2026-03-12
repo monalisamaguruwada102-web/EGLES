@@ -14,7 +14,13 @@ app.use(express.static(__dirname)); // Serve frontend files
 // Initialize PostgreSQL Pool
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-    console.error('❌ FATAL: DATABASE_URL is not defined in environment variables.');
+    console.error('❌ FATAL ERROR: DATABASE_URL is not defined.');
+    console.error('========================================================');
+    console.error('DEPLOYMENT LOGS INDICATE THE DATABASE URL IS MISSING.');
+    console.error('PLEASE GO TO YOUR RENDER DASHBOARD -> ENVIRONMENT TAB');
+    console.error('AND ADD THE DATABASE_URL VARIABLE.');
+    console.error('========================================================');
+    process.exit(1);
 }
 
 const pool = new Pool({
