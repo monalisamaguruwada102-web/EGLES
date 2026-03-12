@@ -642,9 +642,9 @@ const app = {
                                 <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
                                     <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">🚌 Mobility</h4>
                                     ${myTransport ? `
-                                        <div style="font-size: 1.2rem; font-weight: 700;">${myTransport.route}</div>
-                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Bus: ${myTransport.busNo}</div>
-                                        <div style="margin-top: 1rem; font-size: 0.8rem; font-weight: 600; color: var(--success);">• Driver: ${myTransport.driver}</div>
+                                        <div style="font-size: 1.2rem; font-weight: 700;">${myTransport.route || 'N/A'}</div>
+                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Bus: ${myTransport.busNo || 'N/A'}</div>
+                                        <div style="margin-top: 1rem; font-size: 0.8rem; font-weight: 600; color: var(--success);">• Driver: ${myTransport.driver || 'N/A'}</div>
                                     ` : `
                                         <div style="color: var(--text-muted); font-size: 0.9rem;">No active routes.</div>
                                         <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">Please visit the Transport Office for registration.</div>
@@ -1557,7 +1557,7 @@ const app = {
                             ${payroll.filter(p => p.month === month).map(p => `
                                 <tr>
                                     <td style="padding: 1rem;">${staff.find(s => s.staffId === p.staffId)?.name || p.staffId}</td>
-                                    <td style="padding: 1rem;">$${(p.salary + p.bonus - p.deductions).toFixed(2)}</td>
+                                    <td style="padding: 1rem;">$${((p.salary || 0) + (p.bonus || 0) - (p.deductions || 0)).toFixed(2)}</td>
                                     <td style="padding: 1rem;"><span style="color: var(--success);">Paid</span></td>
                                     <td style="padding: 1rem;"><button onclick="app.printSinglePayslip('${p.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer;">Print PDF</button></td>
                                 </tr>
@@ -1570,11 +1570,15 @@ const app = {
 
         document.getElementById('pay-form').onsubmit = async (e) => {
             e.preventDefault();
+            const salary = parseFloat(document.getElementById('p-salary').value) || 0;
+            const bonus = parseFloat(document.getElementById('p-bonus').value || 0) || 0;
+            const deductions = parseFloat(document.getElementById('p-deduct').value || 0) || 0;
+            
             await db.payroll.add({
                 staffId: document.getElementById('p-staff').value,
-                salary: parseFloat(document.getElementById('p-salary').value),
-                bonus: parseFloat(document.getElementById('p-bonus').value || 0),
-                deductions: parseFloat(document.getElementById('p-deduct').value || 0),
+                salary: salary,
+                bonus: bonus,
+                deductions: deductions,
                 month: month,
                 year: year,
                 status: 'Paid'
@@ -1900,7 +1904,7 @@ const app = {
                 <h1>Student Directory</h1>
                 <div class="button-group" style="display: flex; gap: 1rem;">
                     <button class="btn-primary" onclick="app.exportToCSV('students')" style="background: var(--success);">Export to CSV</button>
-                    <button class="btn-primary" onclick="app.showStudentForm()">Admit Student</button>
+                    ${this.currentUser.role === 'Admin' ? '<button class="btn-primary" onclick="app.showStudentForm()">Admit Student</button>' : ''}
                 </div>
             </div>
             
@@ -1924,7 +1928,7 @@ const app = {
                                 <td style="padding: 1.25rem 1rem; color: var(--text-muted);">${s.parentContact}</td>
                                 <td style="padding: 1.25rem 1rem; display: flex; gap: 0.75rem;">
                                     <button onclick="app.viewIDCard('${s.id}')" style="color: var(--accent); background:none; border:none; cursor:pointer; font-weight:600;">ID Card</button>
-                                    <button onclick="app.deleteStudent(${s.id})" style="color: var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">Expel</button>
+                                    ${this.currentUser.role === 'Admin' ? `<button onclick="app.deleteStudent(${s.id})" style="color: var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">Expel</button>` : ''}
                                 </td>
                             </tr>
                         `).join('')}
@@ -3083,8 +3087,8 @@ const app = {
                     <div style="width: 150px; height: 150px; border-radius: 50%; background: var(--bg-card); margin: 2rem 0; border: 4px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 4rem; overflow: hidden;">
                          ${student.name.charAt(0)}
                     </div>
-                    <h2 style="margin-bottom: 0.5rem; color: white;">${student.name}</h2>
-                    <p style="color: var(--primary-bright); font-weight: 700;">STUDENT ID: ${student.studentId}</p>
+                    <h2 style="margin-bottom: 0.5rem; color: white;">${student.name || 'Unknown Student'}</h2>
+                    <p style="color: var(--primary-bright); font-weight: 700;">STUDENT ID: ${student.studentId || 'N/A'}</p>
                     <p style="margin-top: 1rem; font-weight: 600; color: white;">CLASS: ${student.class}</p>
                     <div style="margin-top: auto; padding: 1.5rem; width: 100%; text-align: center; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--glass-border);">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${student.studentId}" style="width: 50px; margin-bottom: 0.5rem; opacity: 0.6;">
@@ -3134,9 +3138,9 @@ const app = {
                 <hr>
                 <div style="display:flex; justify-content:space-between; margin:20px 0;">
                     <div>
-                        <p><strong>Staff Name:</strong> ${s.name}</p>
-                        <p><strong>Designation:</strong> ${s.role}</p>
-                        <p><strong>Employee ID:</strong> ${p.staffId}</p>
+                        <p><strong>Staff Name:</strong> ${s ? s.name : 'Unknown Staff'}</p>
+                        <p><strong>Designation:</strong> ${s ? s.role : 'N/A'}</p>
+                        <p><strong>Employee ID:</strong> ${p.staffId || 'N/A'}</p>
                     </div>
                     <div style="text-align:right;">
                         <p><strong>Month:</strong> ${p.month} ${p.year}</p>
@@ -3144,10 +3148,10 @@ const app = {
                     </div>
                 </div>
                 <table style="width:100%; border:1px solid #000;">
-                    <tr><td style="padding:10px;">Basic Salary</td><td style="padding:10px;text-align:right;">$${p.salary.toFixed(2)}</td></tr>
-                    <tr><td style="padding:10px;">Allowances/Bonus</td><td style="padding:10px;text-align:right;">$${p.bonus.toFixed(2)}</td></tr>
-                    <tr><td style="padding:10px;">Deductions</td><td style="padding:10px;text-align:right;">($${p.deductions.toFixed(2)})</td></tr>
-                    <tr style="font-weight:bold; background:#eee;"><td style="padding:10px;">NET SALARY</td><td style="padding:10px;text-align:right;">$${(p.salary + p.bonus - p.deductions).toFixed(2)}</td></tr>
+                    <tr><td style="padding:10px;">Basic Salary</td><td style="padding:10px;text-align:right;">$${(p.salary || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding:10px;">Allowances/Bonus</td><td style="padding:10px;text-align:right;">$${(p.bonus || 0).toFixed(2)}</td></tr>
+                    <tr><td style="padding:10px;">Deductions</td><td style="padding:10px;text-align:right;">($${(p.deductions || 0).toFixed(2)})</td></tr>
+                    <tr style="font-weight:bold; background:#eee;"><td style="padding:10px;">NET SALARY</td><td style="padding:10px;text-align:right;">$${((p.salary || 0) + (p.bonus || 0) - (p.deductions || 0)).toFixed(2)}</td></tr>
                 </table>
                 <div style="margin-top:50px; text-align:right;">
                     <p style="border-top:1px solid #000; display:inline-block; padding-top:5px; width:200px;">Bursar Signature</p>
