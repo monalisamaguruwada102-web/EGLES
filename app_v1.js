@@ -17,20 +17,20 @@ const app = {
 
     async init() {
         this.container = document.getElementById('app-container');
+        this.loadTheme();
 
         if (this.checkAuth()) {
             const user = this.currentUser;
             // Student portal - only show results/fees
             if (user.role === 'Student') {
-                document.querySelector('.sidebar').style.display = 'none';
-                this.loadTheme();
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) sidebar.style.display = 'none';
                 await this.renderStudentPortal();
                 return;
             }
             this.renderSidebar();
             this.updateHeaderUser();
             this.renderDashboard();
-            this.loadTheme();
             await this.checkSystemAlerts();
             await this.updateNotifBadge();
         } else {
@@ -53,189 +53,138 @@ const app = {
     },
 
     showPublicPortal() {
-        document.querySelector('.sidebar').style.display = 'none';
-        document.querySelector('.top-bar').style.display = 'none';
+        const sidebar = document.querySelector('.sidebar');
+        const topbar = document.querySelector('.top-bar');
+        if (sidebar) sidebar.style.display = 'none';
+        if (topbar) topbar.style.display = 'none';
+        
         this.container.innerHTML = `
-            <div id="public-portal" style="min-height:100vh; background: var(--bg-main);">
+            <div id="public-portal" style="min-height:100vh; background: var(--bg-main); width:100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 
                 <!-- Premium Hero Section -->
-                <div style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99,102,241,0.15) 100%); padding: 4rem 2rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border);">
+                <div style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99,102,241,0.15) 100%); padding: 6rem 1rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border); text-align:center;">
                     <div style="position:absolute; top:-50px; right:-50px; font-size:15rem; opacity:0.03; pointer-events:none;">🏫</div>
                     <div style="max-width:1200px; margin:0 auto; position:relative; z-index:10;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:3rem;">
-                            <div style="flex:1; min-width:300px;">
-                                <div style="display:inline-block; padding:0.4rem 1rem; background:var(--primary-glow); color:var(--primary-bright); border-radius:100px; font-size:0.8rem; font-weight:700; margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;">Official Gateway</div>
-                                <h1 style="font-size:3.5rem; font-weight:800; letter-spacing:-1.5px; line-height:1.1; margin-bottom:1rem; background:linear-gradient(to right, var(--text), var(--primary-bright)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Egles <span style="opacity:0.9;">SMIS</span></h1>
-                                <p style="color:var(--text-muted); font-size:1.15rem; max-width:500px; margin-bottom:2.5rem; line-height:1.6;">Secondary School Management & Information System. Access your academic records, stay updated with school notices, and view live statistics.</p>
-                                
-                                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                                    <button onclick="app.showStudentLogin()" class="btn-primary" style="font-size:1.05rem; padding:0.85rem 2rem; box-shadow:0 8px 25px var(--primary-glow); display:flex; align-items:center; gap:0.5rem;">
-                                        🎓 Student Portal
-                                    </button>
-                                    <button onclick="app.showStaffLogin()" class="btn-primary" style="font-size:1.05rem; padding:0.85rem 2rem; background:rgba(255,255,255,0.05); color:var(--text); box-shadow:none; border:1px solid var(--glass-border); display:flex; align-items:center; gap:0.5rem;">
-                                        🔐 Staff Login
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="desktop-only" style="flex:1; display:flex; justify-content:flex-end;">
-                                <div style="width:380px; height:380px; background:radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); border-radius:50%; display:flex; align-items:center; justify-content:center; animation: blobFloat 8s infinite alternate ease-in-out;">
-                                    <div style="font-size:9rem; filter:drop-shadow(0 20px 30px rgba(0,0,0,0.5)); transform:rotate(-5deg);">🎓</div>
-                                </div>
-                            </div>
+                        <div style="display:inline-block; padding:0.4rem 1.2rem; background:var(--primary-glow); color:var(--primary-bright); border-radius:100px; font-size:0.8rem; font-weight:700; margin-bottom:1.5rem; letter-spacing:2px; text-transform:uppercase; border: 1px solid var(--primary-glow);">Official Gateway</div>
+                        <h1 style="font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight:900; letter-spacing:-2px; line-height:1.1; margin-bottom:1.5rem; background:linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">EGLES <span style="color:var(--primary-bright); -webkit-text-fill-color:var(--primary-bright);">SMIS</span></h1>
+                        <p style="color:var(--text-muted); font-size:1.25rem; max-width:700px; margin:0 auto 3rem; line-height:1.7;">A state-of-the-art management system for the leaders of tomorrow. Seamlessly connecting students, staff, and parents in a secure digital ecosystem.</p>
+                        
+                        <div style="display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
+                            <button onclick="app.showStudentLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; box-shadow:0 15px 40px var(--primary-glow); border-radius:15px; border:none; background:var(--primary); color:white; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
+                                🎓 Student Portal
+                            </button>
+                            <button onclick="app.showStaffLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; background:rgba(255,255,255,0.05); color:var(--text); box-shadow:none; border:1px solid var(--glass-border); border-radius:15px; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
+                                🔐 Staff Login
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div style="max-width:1200px; margin:0 auto; padding:3rem 2rem;">
+                <!-- Main Content -->
+                <div style="max-width:1400px; margin:0 auto; padding:4rem 1rem;">
                     
-                    <!-- PREMIUM: Live Event & Admissions Countdown -->
+                    <!-- Admissions Countdown -->
                     <div id="pub-countdown-container"></div>
 
-                    <!-- PREMIUM: Hall of Fame -->
-                    <div style="margin-bottom: 5rem;">
-                        <h2 style="font-size: 2.2rem; margin-bottom: 2.5rem; text-align: center;">🏆 Wall of Excellence</h2>
-                        <div id="pub-excellence-grid" class="excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <!-- Hall of Fame -->
+                    <div style="margin-bottom: 6rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; text-align: center; font-weight: 800;">🏆 Wall of Excellence</h2>
+                        <div id="pub-excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
                             <!-- Populated dynamically -->
                         </div>
                     </div>
 
-
-                    <!-- PREMIUM: Immersive Interactive Campus Map -->
-                    <div style="margin-bottom: 4rem;">
-                        <h2 style="font-size: 2.2rem; margin-bottom: 1.5rem;">📍 Interactive Campus Map</h2>
-                        <div style="position: relative; width: 100%; height: 400px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(var(--glass-border) 1px, transparent 1px); background-size: 20px 20px;">
-                            
+                    <!-- Interactive Map -->
+                    <div style="margin-bottom: 6rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 2rem; text-align: center; font-weight: 800;">📍 Campus Explorer</h2>
+                        <div style="position: relative; width: 100%; height: 500px; background: var(--bg-card); border-radius: 30px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(var(--glass-border) 1.5px, transparent 1.5px); background-size: 30px 30px;">
                             <!-- Main Academic Block -->
-                            <div style="position: absolute; top: 30%; left: 20%; width: 150px; height: 100px; background: rgba(99, 102, 241, 0.1); border: 2px solid var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);" onmouseover="this.style.transform='scale(1.05)'; this.style.background='rgba(99, 102, 241, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(99, 102, 241, 0.1)'">
+                            <div class="map-node" style="position: absolute; top: 25%; left: 15%; width: 180px; height: 120px; background: rgba(99, 102, 241, 0.15); border: 2px solid var(--primary); border-radius: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);" onmouseover="this.style.transform='scale(1.1) translateY(-10px)'; this.style.background='rgba(99, 102, 241, 0.3)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.background='rgba(99, 102, 241, 0.15)'">
                                 <div style="text-align: center;">
-                                    <span style="font-size: 1.5rem;">🏢</span><br>
-                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Main Block</span>
+                                    <div style="font-size: 2rem;">🏢</div>
+                                    <div style="font-weight: 700; font-size: 0.9rem;">Academic HQ</div>
                                 </div>
                             </div>
-
-                            <!-- Science Labs -->
-                            <div style="position: absolute; top: 20%; right: 25%; width: 120px; height: 120px; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='scale(1.05)'; this.style.background='rgba(16, 185, 129, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(16, 185, 129, 0.1)'">
-                                <div style="text-align: center;">
-                                    <span style="font-size: 1.5rem;">🔬</span><br>
-                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Science Labs</span>
-                                </div>
-                            </div>
-
-                            <!-- Sports Field -->
-                            <div style="position: absolute; bottom: 20%; right: 15%; width: 250px; height: 140px; background: rgba(245, 158, 11, 0.1); border: 2px solid var(--warning); border-radius: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);" onmouseover="this.style.transform='scale(1.02)'; this.style.background='rgba(245, 158, 11, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(245, 158, 11, 0.1)'">
-                                <div style="text-align: center;">
-                                    <span style="font-size: 1.5rem;">⚽</span><br>
-                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Athletics Field</span>
-                                </div>
-                            </div>
-
                             <!-- Library -->
-                            <div style="position: absolute; bottom: 30%; left: 15%; width: 100px; height: 100px; background: rgba(236, 72, 153, 0.1); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);" onmouseover="this.style.transform='scale(1.1)'; this.style.background='rgba(236, 72, 153, 0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(236, 72, 153, 0.1)'">
+                            <div class="map-node" style="position: absolute; bottom: 20%; left: 30%; width: 140px; height: 140px; background: rgba(236, 72, 153, 0.15); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(236, 72, 153, 0.2);" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'; this.style.background='rgba(236, 72, 153, 0.3)'" onmouseout="this.style.transform='scale(1) rotate(0)'; this.style.background='rgba(236, 72, 153, 0.15)'">
                                 <div style="text-align: center;">
-                                    <span style="font-size: 1.5rem;">📚</span><br>
-                                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Library</span>
+                                    <div style="font-size: 2.2rem;">📚</div>
+                                    <div style="font-weight: 700; font-size: 0.9rem;">Modern Library</div>
                                 </div>
                             </div>
-                            
-                            <div style="position: absolute; top: 1rem; left: 1rem; background: var(--bg-main); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--glass-border); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">👆 Hover areas to explore</div>
-                        </div>
-                    </div>
-                    <!-- Live Stats Grid -->
-                    <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; margin-bottom:3rem;">
-                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
-                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">👥</div>
-                            <div style="font-size:3rem; font-weight:800; color:var(--primary); line-height:1;" id="pub-students">—</div>
-                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Enrolled Students</div>
-                        </div>
-                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
-                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">👨‍🏫</div>
-                            <div style="font-size:3rem; font-weight:800; color:var(--success); line-height:1;" id="pub-staff">—</div>
-                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Teaching Staff</div>
-                        </div>
-                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
-                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">📚</div>
-                            <div style="font-size:3rem; font-weight:800; color:var(--accent); line-height:1;" id="pub-subjects">—</div>
-                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Subjects Offered</div>
-                        </div>
-                        <div class="glass-panel" style="margin:0; text-align:center; padding:2rem 1.5rem; position:relative; overflow:hidden;">
-                            <div style="position:absolute; top:-10px; right:-10px; font-size:5rem; opacity:0.04;">📢</div>
-                            <div style="font-size:3rem; font-weight:800; color:var(--warning); line-height:1;" id="pub-notices">—</div>
-                            <div style="font-size:0.9rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:0.75rem; font-weight:600;">Active Notices</div>
-                        </div>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 2.5rem;" class="mobile-stack">
-                        
-                        <!-- Notice Board -->
-                        <div>
-                            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
-                                <div style="width:40px; height:40px; border-radius:12px; background:rgba(245, 158, 11, 0.15); color:var(--warning); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">📢</div>
-                                <h2 style="margin:0;">Notice Board</h2>
-                            </div>
-                            <div id="pub-notices-list" style="display:flex; flex-direction:column; gap:1rem;">
-                                <!-- Populated dynamically -->
-                            </div>
-                        </div>
-
-                        <!-- General Timetable -->
-                        <div>
-                            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem;">
-                                <div style="width:40px; height:40px; border-radius:12px; background:rgba(99, 102, 241, 0.15); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">📅</div>
-                                <h2 style="margin:0;">General Timetable</h2>
-                            </div>
-                            <div class="glass-panel" style="margin:0; padding:0; overflow:hidden;">
-                                <div id="pub-timetable" style="overflow-x:auto;">
-                                    <!-- Populated dynamically -->
+                            <!-- Science Labs -->
+                            <div class="map-node" style="position: absolute; top: 15%; right: 20%; width: 160px; height: 160px; background: rgba(16, 185, 129, 0.15); border: 2px solid var(--success); border-radius: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='scale(1.1) translateY(-5px)'; this.style.background='rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.background='rgba(16, 185, 129, 0.15)'">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 2.5rem;">🧪</div>
+                                    <div style="font-weight: 700; font-size: 0.9rem;">Innovation Labs</div>
                                 </div>
                             </div>
+                            <!-- Sports Area -->
+                            <div class="map-node" style="position: absolute; bottom: 15%; right: 10%; width: 300px; height: 150px; background: rgba(6, 182, 212, 0.15); border: 2px solid var(--accent); border-radius: 75px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(6, 182, 212, 0.2);" onmouseover="this.style.transform='scale(1.05)'; this.style.background='rgba(6, 182, 212, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(6, 182, 212, 0.15)'">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 2.5rem;">⚽</div>
+                                    <div style="font-weight: 700; font-size: 0.9rem;">Olympic Sports Grounds</div>
+                                </div>
+                            </div>
+                            <div style="position: absolute; top: 2rem; left: 2rem; background: var(--bg-main); padding: 0.75rem 1.5rem; border-radius: 100px; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--glass-border); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">🛸 DRONE'S EYE VIEW</div>
                         </div>
-
                     </div>
 
-                    <!-- PREMIUM: Visual Curriculum Explorer -->
-                    <div style="margin-top: 5rem; margin-bottom: 5rem;">
-                        <h2 style="font-size: 2.2rem; margin-bottom: 2rem; text-align: center;">🔬 Academic Pathways</h2>
-                        <div id="pub-curriculum-explorer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <!-- Live Stats -->
+                    <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:2rem; margin-bottom:6rem;">
+                        <!-- Populate dynamically -->
+                    </div>
+
+                    <!-- Curriculum & Pathways -->
+                    <div style="margin-bottom: 6rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; text-align: center; font-weight: 800;">🚀 Academic Pathways</h2>
+                        <div id="pub-curriculum-explorer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
                             <!-- Populated dynamically -->
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;" class="mobile-stack" id="pub-weather-transport">
-                        <!-- Populated dynamically -->
+                    <!-- Notices & Timetable Split -->
+                    <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap: 4rem;" class="mobile-stack">
+                        <div>
+                            <h2 style="font-size: 2rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">📢 Announcements</h2>
+                            <div id="pub-notices-list" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
+                        </div>
+                        <div>
+                            <h2 style="font-size: 2rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">📅 Class Schedules</h2>
+                            <div class="glass-panel" style="margin:0; padding:1.5rem; overflow-x:auto; border-radius: 25px;">
+                                <div id="pub-timetable"></div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
-                <!-- PREMIUM: Alumni Parallax Section -->
+                <!-- Footer/Testimonial -->
                 <div id="pub-testimonial-container"></div>
-
+                
+                <footer style="padding: 4rem 2rem; text-align: center; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.2);">
+                    <div class="logo" style="font-size: 2rem; margin-bottom: 1rem;">EGLES <span>SMIS</span></div>
+                    <p style="color: var(--text-muted);">© 2026 Egles Secondary School. All academic rights reserved.</p>
+                </footer>
             </div>
 
             <style>
-                @media (max-width: 900px) {
-                    .mobile-stack { grid-template-columns: 1fr !important; }
-                    #public-portal h1 { font-size: 2.5rem !important; }
-                    .premium-countdown {
-                        flex-direction: column !important;
-                        text-align: center !important;
-                        padding: 1.5rem !important;
-                    }
-                    .premium-countdown .countdown-text h2 {
-                        font-size: 1.8rem !important;
-                        line-height: 1.3 !important;
-                    }
-                    .countdown-numbers {
-                        width: 100% !important;
-                        justify-content: center !important;
-                    }
-                    .excellence-grid, .curriculum-grid {
-                        grid-template-columns: 1fr !important;
-                    }
+                #public-portal {
+                    overflow-x: hidden;
+                    position: relative;
+                }
+                .main-wrapper {
+                    margin-left: 0 !important;
+                    width: 100% !important;
+                    padding: 0 !important;
+                    max-width: 100% !important;
+                }
+                @media (max-width: 1000px) {
+                    .mobile-stack { grid-template-columns: 1fr !important; gap: 3rem !important; }
+                    #public-portal { width: 100% !important; margin-left: 0 !important; }
                 }
             </style>
         `;
-        // Load public data
         this._loadPublicData();
     },
 
@@ -347,20 +296,18 @@ const app = {
         // 5. Testimonial
         const testContainer = document.getElementById('pub-testimonial-container');
         if (testContainer && testimonials.length > 0) {
-            const t = testimonials[0]; // Just take first for now
+            const t = testimonials[0];
             testContainer.innerHTML = `
-                <div style="position: relative; padding: 6rem 2rem; overflow: hidden; background: #0f172a; color: white;">
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 200%; background: radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 0%, #0f172a 70%); transform: translateY(-25%); z-index: 0; opacity: 0.5; pointer-events: none;"></div>
-                    
-                    <div style="max-width: 1000px; margin: 0 auto; position: relative; z-index: 10; text-align: center;">
-                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">${t.emoji}</span>
-                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; font-weight: 800;">Forging Global Leaders</h2>
-                        
-                        <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 3rem; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-                            <p style="font-size: 1.4rem; font-style: italic; line-height: 1.6; margin-bottom: 2rem;">"${t.quote}"</p>
-                            <div>
-                                <h4 style="margin: 0; font-size: 1.2rem; font-weight: 700;">${t.name}</h4>
-                                <p style="color: var(--primary-bright); margin: 0.5rem 0 0 0; font-size: 0.95rem; font-weight: 600;">${t.role}</p>
+                <div style="position: relative; padding: 8rem 2rem; overflow: hidden; background: #020617; color: white;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 200%; background: radial-gradient(circle at center, var(--primary-glow) 0%, #020617 70%); transform: translateY(-30%); z-index: 0; opacity: 0.6; pointer-events: none;"></div>
+                    <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 10; text-align: center;">
+                        <span style="font-size: 4rem; display: block; margin-bottom: 1.5rem; filter: drop-shadow(0 0 20px var(--primary-glow));">"${t.emoji}"</span>
+                        <h2 style="font-size: 3rem; margin-bottom: 4rem; font-weight: 900; letter-spacing: -1px;">Forging Global Leaders</h2>
+                        <div style="background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); padding: 4rem 2rem; border-radius: 40px; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.7);">
+                            <p style="font-size: 1.6rem; font-style: italic; line-height: 1.7; margin-bottom: 2.5rem; color: #e2e8f0; font-weight: 400;">"${t.quote}"</p>
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                <h4 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: white;">${t.name}</h4>
+                                <p style="color: var(--primary-bright); margin: 0; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">${t.role}</p>
                             </div>
                         </div>
                     </div>
@@ -368,35 +315,29 @@ const app = {
             `;
         }
 
-        // Counter animation logic
-        const animateValue = (id, start, end, duration) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (end === 0) { el.textContent = '0'; return; }
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                // Ease out cubic
-                const easeProgress = 1 - Math.pow(1 - progress, 3);
-                el.textContent = Math.floor(easeProgress * (end - start) + start);
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                } else {
-                    el.textContent = end;
-                }
-            };
-            window.requestAnimationFrame(step);
-        };
+        // Live Stats Population
+        const statsGrid = document.getElementById('public-stats');
+        if (statsGrid) {
+            const stats = [
+                { id: 'pub-students', count: students.length, label: 'Enrolled Students', icon: '👥', color: 'var(--primary)' },
+                { id: 'pub-staff', count: staff.filter(s => s.role === 'Teacher').length, label: 'Senior Faculty', icon: '👩‍🏫', color: 'var(--success)' },
+                { id: 'pub-subjects', count: subjects.length, label: 'Modern Courses', icon: '🚀', color: 'var(--accent)' },
+                { id: 'pub-notices', count: notices.length, label: 'Live Alerts', icon: '🛰️', color: 'var(--warning)' }
+            ];
+            
+            statsGrid.innerHTML = stats.map(s => `
+                <div class="glass-panel" style="margin:0; text-align:center; padding:3rem 1.5rem; position:relative; overflow:hidden; border-radius: 30px; border: 1px solid var(--glass-border); transition: all 0.4s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='${s.color}'" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='var(--glass-border)'">
+                    <div style="position:absolute; top:-20px; right:-20px; font-size:7rem; opacity:0.04; transform: rotate(15deg);">${s.icon}</div>
+                    <div style="font-size:4rem; font-weight:900; color:${s.color}; line-height:1; letter-spacing: -2px; margin-bottom: 1rem;" id="${s.id}">—</div>
+                    <div style="font-size:0.95rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:2px; font-weight:800;">${s.label}</div>
+                </div>
+            `).join('');
 
-        const staffCount = staff.filter(s => s.role === 'Teacher').length;
-
-        setTimeout(() => {
-            animateValue('pub-students', 0, students.length, 1500);
-            animateValue('pub-staff', 0, staffCount, 1500);
-            animateValue('pub-subjects', 0, subjects.length, 1500);
-            animateValue('pub-notices', 0, notices.length, 1500);
-        }, 100);
+            // Trigger animations
+            setTimeout(() => {
+                stats.forEach(s => this.animateValue(s.id, 0, s.count, 2000));
+            }, 500);
+        }
 
         // Notices
         const nl = document.getElementById('pub-notices-list');
@@ -536,79 +477,94 @@ const app = {
     },
 
     async renderStudentPortal() {
-        document.querySelector('.sidebar').style.display = 'none';
-        document.querySelector('.top-bar').style.display = 'none';
+        const sidebar = document.querySelector('.sidebar');
+        const topbar = document.querySelector('.top-bar');
+        if (sidebar) sidebar.style.display = 'none';
+        if (topbar) topbar.style.display = 'none';
+
         const user = this.currentUser;
-        const [marks, fees, notices, attendance, subjects, staff, library, health, discipline, hostels, hostelAssignments, transport, transportAssignments] = await Promise.all([
+        const [marks, fees, notices, attendance, subjects, staff, health, discipline, hostelAssignments, hostels, transportAssignments, transport] = await Promise.all([
             db.marks.toArray(),
             db.fees.toArray(),
             db.notices.toArray(),
             db.attendance.toArray(),
             db.subjects.toArray(),
             db.staff.toArray(),
-            db.library.toArray(),
             db.health.toArray(),
             db.discipline.toArray(),
-            db.hostels.toArray(),
             db.hostelAssignments.toArray(),
-            db.transport.toArray(),
-            db.transportAssignments.toArray()
+            db.hostels.toArray(),
+            db.transportAssignments.toArray(),
+            db.transport.toArray()
         ]);
+        
         const myMarks = marks.filter(m => m.studentId === user.studentId);
         const myFees = fees.filter(f => f.studentId === user.studentId);
         const myAttendance = attendance.filter(a => a.studentId === user.studentId);
         const myLoans = (db.bookLoans ? await db.bookLoans.toArray() : []).filter(l => l.studentId === user.studentId);
-        const myHealth = health.filter(h => h.studentId === user.studentId);
         const myDiscipline = discipline.filter(d => d.studentId === user.studentId);
         const myHostelAssigned = hostelAssignments.find(ha => ha.studentId === user.studentId);
         const myHostel = myHostelAssigned ? hostels.find(h => h.id === myHostelAssigned.hostelId) : null;
-        const myTransportAssigned = transportAssignments.find(ta => ta.studentId === user.studentId);
-        const myTransport = myTransportAssigned ? transport.find(t => t.id === myTransportAssigned.routeId) : null;
+        
         const totalPaid = myFees.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
         const presentDays = myAttendance.filter(a => a.status === 'Present').length;
         const attendancePct = myAttendance.length ? Math.round((presentDays / myAttendance.length) * 100) : 0;
 
-        // Group marks by subject
         const subjectMap = {};
         myMarks.forEach(m => {
             if (!subjectMap[m.subject]) subjectMap[m.subject] = [];
             subjectMap[m.subject].push(m);
         });
 
-        // Map Teachers to Subjects
         const teachersMap = staff.filter(s => s.role === 'Teacher' || s.role === 'Admin');
 
         this.container.innerHTML = `
-            <div style="padding:1rem; max-width:1200px; margin:0 auto; padding-top:2rem;">
-                
-                <!-- Premium Student Identity Card -->
-                <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.05)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 2.5rem; display: flex; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 300px; padding: 2.5rem; display: flex; gap: 2rem; align-items: center;">
-                        <div style="position: relative;">
-                            <div style="width: 120px; height: 120px; border-radius: 24px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 800; box-shadow: 0 10px 25px var(--primary-glow); border: 4px solid var(--bg-card);">
-                                ${user.name.charAt(0).toUpperCase()}
+            <div id="student-portal" style="min-height: 100vh; background: var(--bg-main); width: 100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
+                <div style="max-width:1400px; margin:0 auto; padding:2rem 1rem;">
+                    
+                    <!-- Header with Logout -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem; padding: 1.5rem; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--glass-border);">
+                        <div class="logo">EGLES <span>STUDENT</span></div>
+                        <div style="display:flex; align-items:center; gap:1.5rem;">
+                            <div style="text-align:right;" class="desktop-only">
+                                <div style="font-weight:800; color:white;">${user.name}</div>
+                                <div style="font-size:0.75rem; color:var(--primary-bright); font-weight:700;">ACTIVE SESSION</div>
                             </div>
-                            <div style="position: absolute; bottom: -5px; right: -5px; width: 32px; height: 32px; background: var(--success); border-radius: 50%; border: 3px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">✔️</div>
-                        </div>
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                <span style="background: var(--primary-glow); color: var(--primary-bright); padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Verified Student</span>
-                                <span style="color: var(--text-muted); font-size: 0.85rem;">Class of ${new Date().getFullYear() + 2}</span>
-                            </div>
-                            <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">${user.name}</h1>
-                            <div style="display: flex; gap: 1.5rem; margin-top: 0.75rem; color: var(--text-muted); font-size: 1rem;">
-                                <span><strong>ID:</strong> ${user.studentId}</span>
-                                <span><strong>Current:</strong> Grade 11-A</span>
-                            </div>
+                            <button onclick="app.logout()" style="background:var(--danger); color:white; border:none; padding:0.75rem 1.5rem; border-radius:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:0.5rem; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
+                                🚪 Secure Logout
+                            </button>
                         </div>
                     </div>
-                    <div style="width: 250px; background: rgba(255,255,255,0.02); border-left: 1px solid var(--glass-border); padding: 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                        <div style="width: 130px; height: 130px; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${user.studentId}" alt="Student QR" style="width: 100%;">
+
+                    <!-- Premium Student Identity Card -->
+                    <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.08)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 3rem; display: flex; flex-wrap: wrap; border-radius: 30px; box-shadow: var(--shadow-lg);">
+                        <div style="flex: 1; min-width: 300px; padding: 3rem; display: flex; gap: 2.5rem; align-items: center;">
+                            <div style="position: relative;">
+                                <div style="width: 140px; height: 140px; border-radius: 30px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 20px 40px var(--primary-glow); border: 5px solid var(--bg-card);">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div style="position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; background: var(--success); border-radius: 50%; border: 4px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">✨</div>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                                    <span style="background: var(--success-glow); color: var(--success); padding: 5px 15px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid var(--success-glow);">Active Status</span>
+                                    <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Grade 11 &bull; Science Stream</span>
+                                </div>
+                                <h1 style="margin: 0; font-size: 3rem; font-weight: 900; letter-spacing: -1.5px; background: linear-gradient(to bottom, #ffffff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${user.name}</h1>
+                                <div style="display: flex; gap: 2.5rem; margin-top: 1rem; color: var(--text-muted); font-size: 1.1rem;">
+                                    <span><strong>STUDENT ID:</strong> <span style="color:var(--primary-bright); font-family: monospace;">${user.studentId}</span></span>
+                                    <span><strong>ENROLLED:</strong> ${new Date().getFullYear()}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Access Token V.2.0</div>
+                        <div style="width: 300px; background: rgba(0,0,0,0.3); border-left: 1px solid var(--glass-border); padding: 3rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <div style="width: 150px; height: 150px; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${user.studentId}" alt="Student QR" style="width: 100%; height: 100%;">
+                            </div>
+                            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">SECURE ID GATEWAY</div>
+                        </div>
                     </div>
-                </div>
+                    </div>
 
                 <!-- Strategic Performance & Info Grid -->
                 <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 2.5rem;" class="mobile-stack">
@@ -842,6 +798,25 @@ const app = {
     isReadOnly() {
         if (!this.currentUser) return true;
         return ['Student', 'Parent'].includes(this.currentUser.role);
+    },
+
+    animateValue(id, start, end, duration) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (end === 0) { el.textContent = '0'; return; }
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.floor(easeProgress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                el.textContent = end;
+            }
+        };
+        window.requestAnimationFrame(step);
     },
 
     canModify() {

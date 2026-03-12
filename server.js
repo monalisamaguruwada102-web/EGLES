@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
@@ -8,267 +8,289 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Supabase Configuration
+// Supabase Configuration (Optional Sync)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 if (supabase) {
-    console.log('☁️ Supabase client initialized');
+    console.log('☁️ Supabase client initialized for sync');
 } else {
-    console.warn('⚠️ Supabase credentials missing. Running in local-only mode.');
+    console.warn('⚠️ Supabase credentials missing. Sync disabled.');
 }
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname)); // Serve frontend files
 
-// Use Render persistent disk path if available, otherwise local
-const dbPath = process.env.RENDER_DISK_PATH
-    ? path.join(process.env.RENDER_DISK_PATH, 'egles.db')
-    : path.join(__dirname, 'egles.db');
+// Initialize PostgreSQL Pool
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false // Required for Render Postgres
+    }
+});
 
-console.log(`Database path: ${dbPath}`);
+pool.on('connect', () => {
+    console.log('🐘 Connected to PostgreSQL (Render Database)');
+});
 
-// Initialize SQLite database
-const db = new Database(dbPath);
+pool.on('error', (err) => {
+    console.error('❌ PostgreSQL Pool Error:', err.message);
+});
 
+// Auto-create all tables on startup (PostgreSQL syntax)
+async function initDb() {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS students (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT UNIQUE,
+                name TEXT,
+                class TEXT,
+                gender TEXT,
+                parentContact TEXT
+            );
+            CREATE TABLE IF NOT EXISTS attendance (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                date TEXT,
+                status TEXT
+            );
+            CREATE TABLE IF NOT EXISTS fees (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                amount DECIMAL(10,2),
+                date TEXT,
+                type TEXT
+            );
+            CREATE TABLE IF NOT EXISTS marks (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                subject TEXT,
+                score INTEGER,
+                term TEXT,
+                year INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS staff (
+                id SERIAL PRIMARY KEY,
+                staffId TEXT UNIQUE,
+                name TEXT,
+                role TEXT,
+                contact TEXT
+            );
+            CREATE TABLE IF NOT EXISTS subjects (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                class TEXT,
+                teacherId TEXT
+            );
+            CREATE TABLE IF NOT EXISTS assets (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                quantity INTEGER,
+                condition TEXT,
+                value DECIMAL(10,2),
+                purchaseDate TEXT
+            );
+            CREATE TABLE IF NOT EXISTS timetable (
+                id SERIAL PRIMARY KEY,
+                class TEXT,
+                day TEXT,
+                period TEXT,
+                subject TEXT,
+                teacherId TEXT
+            );
+            CREATE TABLE IF NOT EXISTS library (
+                id SERIAL PRIMARY KEY,
+                title TEXT,
+                ISBN TEXT,
+                author TEXT,
+                quantity INTEGER,
+                available INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS bookLoans (
+                id SERIAL PRIMARY KEY,
+                bookId INTEGER,
+                studentId TEXT,
+                loanDate TEXT,
+                returnDate TEXT,
+                status TEXT
+            );
+            CREATE TABLE IF NOT EXISTS discipline (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                infraction TEXT,
+                date TEXT,
+                action TEXT,
+                severity TEXT
+            );
+            CREATE TABLE IF NOT EXISTS health (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                bloodGroup TEXT,
+                allergies TEXT,
+                emergencyContact TEXT
+            );
+            CREATE TABLE IF NOT EXISTS payroll (
+                id SERIAL PRIMARY KEY,
+                staffId TEXT,
+                month TEXT,
+                year INTEGER,
+                salary DECIMAL(10,2),
+                bonus DECIMAL(10,2),
+                deductions DECIMAL(10,2),
+                status TEXT
+            );
+            CREATE TABLE IF NOT EXISTS pos (
+                id SERIAL PRIMARY KEY,
+                itemName TEXT,
+                price DECIMAL(10,2),
+                quantity INTEGER,
+                date TEXT
+            );
+            CREATE TABLE IF NOT EXISTS expenses (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                amount DECIMAL(10,2),
+                category TEXT,
+                date TEXT
+            );
+            CREATE TABLE IF NOT EXISTS notices (
+                id SERIAL PRIMARY KEY,
+                title TEXT,
+                content TEXT,
+                date TEXT,
+                priority TEXT DEFAULT 'Medium'
+            );
+            CREATE TABLE IF NOT EXISTS hostels (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                capacity INTEGER,
+                gender TEXT
+            );
+            CREATE TABLE IF NOT EXISTS hostelAssignments (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                hostelId INTEGER,
+                roomNo TEXT
+            );
+            CREATE TABLE IF NOT EXISTS transport (
+                id SERIAL PRIMARY KEY,
+                route TEXT,
+                busNo TEXT,
+                driver TEXT
+            );
+            CREATE TABLE IF NOT EXISTS transportAssignments (
+                id SERIAL PRIMARY KEY,
+                studentId TEXT,
+                routeId INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                title TEXT,
+                message TEXT,
+                date TEXT,
+                type TEXT,
+                read INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE,
+                password TEXT,
+                role TEXT,
+                name TEXT
+            );
+            CREATE TABLE IF NOT EXISTS public_settings (
+                id SERIAL PRIMARY KEY,
+                key TEXT UNIQUE,
+                value TEXT
+            );
+            CREATE TABLE IF NOT EXISTS public_achievements (
+                id SERIAL PRIMARY KEY,
+                category TEXT,
+                title TEXT,
+                content TEXT,
+                icon TEXT
+            );
+            CREATE TABLE IF NOT EXISTS public_curriculum (
+                id SERIAL PRIMARY KEY,
+                category TEXT,
+                icon TEXT,
+                description TEXT,
+                details TEXT
+            );
+            CREATE TABLE IF NOT EXISTS public_testimonials (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                role TEXT,
+                quote TEXT,
+                emoji TEXT
+            );
+        `);
 
-// Auto-create all tables on startup
-db.exec(`
-CREATE TABLE IF NOT EXISTS "students" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT UNIQUE,
-    name TEXT,
-    class TEXT,
-    gender TEXT,
-    parentContact TEXT
-);
-CREATE TABLE IF NOT EXISTS "attendance" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    date TEXT,
-    status TEXT
-);
-CREATE TABLE IF NOT EXISTS "fees" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    amount REAL,
-    date TEXT,
-    type TEXT
-);
-CREATE TABLE IF NOT EXISTS "marks" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    subject TEXT,
-    score INTEGER,
-    term TEXT,
-    year INTEGER
-);
-CREATE TABLE IF NOT EXISTS "staff" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    staffId TEXT UNIQUE,
-    name TEXT,
-    role TEXT,
-    contact TEXT
-);
-CREATE TABLE IF NOT EXISTS "subjects" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    class TEXT,
-    teacherId TEXT
-);
-CREATE TABLE IF NOT EXISTS "assets" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    quantity INTEGER,
-    condition TEXT,
-    value REAL,
-    purchaseDate TEXT
-);
-CREATE TABLE IF NOT EXISTS "timetable" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    class TEXT,
-    day TEXT,
-    period TEXT,
-    subject TEXT,
-    teacherId TEXT
-);
-CREATE TABLE IF NOT EXISTS "library" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    ISBN TEXT,
-    author TEXT,
-    quantity INTEGER,
-    available INTEGER
-);
-CREATE TABLE IF NOT EXISTS "bookLoans" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bookId INTEGER,
-    studentId TEXT,
-    loanDate TEXT,
-    returnDate TEXT,
-    status TEXT
-);
-CREATE TABLE IF NOT EXISTS "discipline" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    infraction TEXT,
-    date TEXT,
-    action TEXT,
-    severity TEXT
-);
-CREATE TABLE IF NOT EXISTS "health" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    bloodGroup TEXT,
-    allergies TEXT,
-    emergencyContact TEXT
-);
-CREATE TABLE IF NOT EXISTS "payroll" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    staffId TEXT,
-    month TEXT,
-    year INTEGER,
-    salary REAL,
-    bonus REAL,
-    deductions REAL,
-    status TEXT
-);
-CREATE TABLE IF NOT EXISTS "pos" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    itemName TEXT,
-    price REAL,
-    quantity INTEGER,
-    date TEXT
-);
-CREATE TABLE IF NOT EXISTS "expenses" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    amount REAL,
-    category TEXT,
-    date TEXT
-);
-CREATE TABLE IF NOT EXISTS "notices" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    content TEXT,
-    date TEXT,
-    expiry TEXT
-);
-CREATE TABLE IF NOT EXISTS "hostels" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    capacity INTEGER,
-    gender TEXT
-);
-CREATE TABLE IF NOT EXISTS "hostelAssignments" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    hostelId INTEGER,
-    roomNo TEXT
-);
-CREATE TABLE IF NOT EXISTS "transport" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    route TEXT,
-    busNo TEXT,
-    driver TEXT
-);
-CREATE TABLE IF NOT EXISTS "transportAssignments" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    studentId TEXT,
-    routeId INTEGER
-);
-CREATE TABLE IF NOT EXISTS "notifications" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    message TEXT,
-    date TEXT,
-    type TEXT,
-    read INTEGER DEFAULT 0
-);
-CREATE TABLE IF NOT EXISTS "users" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT,
-    role TEXT,
-    name TEXT
-);
-CREATE TABLE IF NOT EXISTS "public_settings" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    key TEXT UNIQUE,
-    value TEXT
-);
-CREATE TABLE IF NOT EXISTS "public_achievements" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT,
-    title TEXT,
-    content TEXT,
-    icon TEXT
-);
-CREATE TABLE IF NOT EXISTS "public_curriculum" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT,
-    icon TEXT,
-    description TEXT,
-    details TEXT
-);
-CREATE TABLE IF NOT EXISTS "public_testimonials" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    role TEXT,
-    quote TEXT,
-    emoji TEXT
-);
-`);
+        // Create default admin account
+        const adminRes = await client.query('SELECT id FROM users WHERE username = $1', ['admin']);
+        if (adminRes.rowCount === 0) {
+            await client.query('INSERT INTO users (username, password, role, name) VALUES ($1, $2, $3, $4)', ['admin', 'admin123', 'Admin', 'System Administrator']);
+            console.log('Default admin created: username=admin, password=admin123');
+        }
 
-// Create default admin account if it doesn't exist
-const existingAdmin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
-if (!existingAdmin) {
-    db.prepare('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)').run('admin', 'admin123', 'Admin', 'System Administrator');
-    console.log('Default admin created: username=admin, password=admin123');
+        // Seed Public Dashboard Data
+        const settingsRes = await client.query('SELECT COUNT(*) as count FROM public_settings');
+        if (parseInt(settingsRes.rows[0].count) === 0) {
+            await client.query('INSERT INTO public_settings (key, value) VALUES ($1, $2)', ['countdown_title', 'Term 2 Admissions Open']);
+            await client.query('INSERT INTO public_settings (key, value) VALUES ($1, $2)', ['countdown_date', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()]);
+            await client.query('INSERT INTO public_settings (key, value) VALUES ($1, $2)', ['weather_mock', '☀️ 24°C']);
+            await client.query('INSERT INTO public_settings (key, value) VALUES ($1, $2)', ['transport_status', '🚌 All Routes On Time']);
+        }
+
+        const achievementRes = await client.query('SELECT COUNT(*) as count FROM public_achievements');
+        if (parseInt(achievementRes.rows[0].count) === 0) {
+            const achievements = [
+                ['Academics', 'Sarah Jenkins', 'National Science Olympiad Winner 2025. Perfect score in Advanced Physics.', '🥇'],
+                ['Sports', 'Senior Boys Football', 'Regional Champions for three consecutive years (2023-2025).', '⚽'],
+                ['Arts', 'Drama Club', 'Awarded "Best Ensemble" at the National Schools Theatre Festival.', '🎭']
+            ];
+            for (const a of achievements) {
+                await client.query('INSERT INTO public_achievements (category, title, content, icon) VALUES ($1, $2, $3, $4)', a);
+            }
+        }
+
+        const curriculumRes = await client.query('SELECT COUNT(*) as count FROM public_curriculum');
+        if (parseInt(curriculumRes.rows[0].count) === 0) {
+            const curriculum = [
+                ['STEM', '🧪', 'Science, Technology, Engineering & Math', 'Advanced Physics Lab, Robotics & AI Club, AP Calculus & Statistics, Environmental Science'],
+                ['Humanities', '📚', 'Languages, History & Social Sciences', 'World Literature, Modern European History, Psychology & Sociology, Model UN Debate Team'],
+                ['Creative Arts', '🎭', 'Fine Arts, Music & Performance', 'Digital Graphic Design, Classical & Jazz Orchestra, Theatre Production, 3D Sculpting Studio']
+            ];
+            for (const c of curriculum) {
+                await client.query('INSERT INTO public_curriculum (category, icon, description, details) VALUES ($1, $2, $3, $4)', c);
+            }
+        }
+
+        const testimonialRes = await client.query('SELECT COUNT(*) as count FROM public_testimonials');
+        if (parseInt(testimonialRes.rows[0].count) === 0) {
+            await client.query('INSERT INTO public_testimonials (name, role, quote, emoji) VALUES ($1, $2, $3, $4)', [
+                'Dr. Alistair Chen',
+                'Class of 2014 • Senior Lead Engineer, Quantum Compute',
+                'The foundation I received here didn\'t just teach me how to pass exams; it taught me how to think critically, innovate, and lead with empathy. It was the launchpad for my career in AI research.',
+                '🎓'
+            ]);
+        }
+
+        await client.query('COMMIT');
+        console.log('✅ Database initialized and seed data ready');
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('❌ Database initialization failed:', err.message);
+    } finally {
+        client.release();
+    }
 }
 
-// Seed Public Dashboard Data
-const settingsCount = db.prepare('SELECT COUNT(*) as count FROM public_settings').get().count;
-if (settingsCount === 0) {
-    db.prepare('INSERT INTO public_settings (key, value) VALUES (?, ?)').run('countdown_title', 'Term 2 Admissions Open');
-    db.prepare('INSERT INTO public_settings (key, value) VALUES (?, ?)').run('countdown_date', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString());
-    db.prepare('INSERT INTO public_settings (key, value) VALUES (?, ?)').run('weather_mock', '☀️ 24°C');
-    db.prepare('INSERT INTO public_settings (key, value) VALUES (?, ?)').run('transport_status', '🚌 All Routes On Time');
-}
-
-const achievementCount = db.prepare('SELECT COUNT(*) as count FROM public_achievements').get().count;
-if (achievementCount === 0) {
-    const achievements = [
-        ['Academics', 'Sarah Jenkins', 'National Science Olympiad Winner 2025. Perfect score in Advanced Physics.', '🥇'],
-        ['Sports', 'Senior Boys Football', 'Regional Champions for three consecutive years (2023-2025).', '⚽'],
-        ['Arts', 'Drama Club', 'Awarded "Best Ensemble" at the National Schools Theatre Festival.', '🎭']
-    ];
-    const stmt = db.prepare('INSERT INTO public_achievements (category, title, content, icon) VALUES (?, ?, ?, ?)');
-    achievements.forEach(a => stmt.run(...a));
-}
-
-const curriculumCount = db.prepare('SELECT COUNT(*) as count FROM public_curriculum').get().count;
-if (curriculumCount === 0) {
-    const curriculum = [
-        ['STEM', '🧪', 'Science, Technology, Engineering & Math', 'Advanced Physics Lab, Robotics & AI Club, AP Calculus & Statistics, Environmental Science'],
-        ['Humanities', '📚', 'Languages, History & Social Sciences', 'World Literature, Modern European History, Psychology & Sociology, Model UN Debate Team'],
-        ['Creative Arts', '🎭', 'Fine Arts, Music & Performance', 'Digital Graphic Design, Classical & Jazz Orchestra, Theatre Production, 3D Sculpting Studio']
-    ];
-    const stmt = db.prepare('INSERT INTO public_curriculum (category, icon, description, details) VALUES (?, ?, ?, ?)');
-    curriculum.forEach(c => stmt.run(...c));
-}
-
-const testimonialCount = db.prepare('SELECT COUNT(*) as count FROM public_testimonials').get().count;
-if (testimonialCount === 0) {
-    db.prepare('INSERT INTO public_testimonials (name, role, quote, emoji) VALUES (?, ?, ?, ?)').run(
-        'Dr. Alistair Chen',
-        'Class of 2014 • Senior Lead Engineer, Quantum Compute',
-        'The foundation I received here didn\'t just teach me how to pass exams; it taught me how to think critically, innovate, and lead with empathy. It was the launchpad for my career in AI research.',
-        '🎓'
-    );
-}
+initDb();
 
 // Allowed tables for security
 const ALLOWED_TABLES = [
@@ -287,7 +309,7 @@ function validateTable(table, res) {
     return true;
 }
 
-// Helper: Sync data to Supabase
+// Helper: Sync data to Supabase (Optional)
 async function syncToSupabase(table, data, method = 'upsert', id = null) {
     if (!supabase) return;
     try {
@@ -309,7 +331,7 @@ async function startupSync() {
     console.log('🔄 Starting full database sync to cloud...');
     for (const table of ALLOWED_TABLES) {
         try {
-            const rows = db.prepare(`SELECT * FROM "${table}"`).all();
+            const { rows } = await pool.query(`SELECT * FROM ${table}`);
             if (rows.length > 0) {
                 const { error } = await supabase.from(table).upsert(rows);
                 if (error) console.error(`⚠️ Sync failed for ${table}:`, error.message);
@@ -353,22 +375,24 @@ app.get('/api/:table', async (req, res) => {
         }
     }
 
-    // Local Fallback: SQLite
+    // Local Fallback: PostgreSQL
     try {
-        let sql = `SELECT * FROM "${table}"`;
+        let sql = `SELECT * FROM ${table}`;
         const values = [];
         const conditions = [];
 
+        let i = 1;
         for (const [key, value] of Object.entries(filters)) {
-            conditions.push(`"${key}" = ?`);
+            conditions.push(`${key} = $${i++}`);
             values.push(value);
         }
+        
         if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
-        if (_sort) sql += ` ORDER BY "${_sort}" ${(_order || 'ASC').toUpperCase()}`;
+        if (_sort) sql += ` ORDER BY ${_sort} ${(_order || 'ASC').toUpperCase()}`;
         if (_limit) sql += ` LIMIT ${parseInt(_limit)}`;
 
-        const rows = db.prepare(sql).all(...values);
-        res.json(rows);
+        const result = await pool.query(sql, values);
+        res.json(result.rows);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: err.message });
@@ -376,13 +400,13 @@ app.get('/api/:table', async (req, res) => {
 });
 
 // GET single row by id
-app.get('/api/:table/:id', (req, res) => {
+app.get('/api/:table/:id', async (req, res) => {
     const { table, id } = req.params;
     if (!validateTable(table, res)) return;
     try {
-        const row = db.prepare(`SELECT * FROM "${table}" WHERE id = ?`).get(id);
-        if (!row) return res.status(404).json({ error: 'Not found' });
-        res.json(row);
+        const result = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -393,27 +417,35 @@ app.post('/api/:table', async (req, res) => {
     const { table } = req.params;
     if (!validateTable(table, res)) return;
 
-    const insert = (data) => {
-        const keys = Object.keys(data);
-        const values = Object.values(data);
-        const placeholders = keys.map(() => '?').join(', ');
-        const sql = `INSERT INTO "${table}" (${keys.map(k => `"${k}"`).join(', ')}) VALUES (${placeholders})`;
-        const result = db.prepare(sql).run(...values);
-        const row = db.prepare(`SELECT * FROM "${table}" WHERE id = ?`).get(result.lastInsertRowid);
-
-        // Async Sync to Supabase
-        syncToSupabase(table, row);
-
-        return row;
-    };
-
     try {
         const data = req.body;
         if (Array.isArray(data)) {
-            const rows = data.map(insert);
-            res.status(201).json(rows);
+            const insertedRows = [];
+            for (const item of data) {
+                const keys = Object.keys(item);
+                const values = Object.values(item);
+                const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+                const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
+                const result = await pool.query(sql, values);
+                const row = result.rows[0];
+                insertedRows.push(row);
+                // Async Sync to Supabase
+                syncToSupabase(table, row);
+            }
+            res.status(201).json(insertedRows);
         } else {
-            res.status(201).json(insert(data));
+            const keys = Object.keys(data);
+            const values = Object.values(data);
+            const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+            const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
+            
+            const result = await pool.query(sql, values);
+            const row = result.rows[0];
+
+            // Async Sync to Supabase
+            syncToSupabase(table, row);
+
+            res.status(201).json(row);
         }
     } catch (err) {
         console.error(err.message);
@@ -429,9 +461,11 @@ app.put('/api/:table/:id', async (req, res) => {
         const data = req.body;
         const keys = Object.keys(data);
         const values = Object.values(data);
-        const setClause = keys.map(k => `"${k}" = ?`).join(', ');
-        db.prepare(`UPDATE "${table}" SET ${setClause} WHERE id = ?`).run(...values, id);
-        const row = db.prepare(`SELECT * FROM "${table}" WHERE id = ?`).get(id);
+        const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+        
+        const sql = `UPDATE ${table} SET ${setClause} WHERE id = $${keys.length + 1} RETURNING *`;
+        const result = await pool.query(sql, [...values, id]);
+        const row = result.rows[0];
 
         // Async Sync to Supabase
         syncToSupabase(table, row);
@@ -451,22 +485,21 @@ app.put('/api/bulk/:table', async (req, res) => {
     try {
         const setKeys = Object.keys(updateData);
         const setValues = Object.values(updateData);
-        const setClause = setKeys.map(k => `"${k}" = ?`).join(', ');
+        const setClause = setKeys.map((k, i) => `${k} = $${i + 1}`).join(', ');
 
         const whereKeys = Object.keys(filters);
         const whereValues = Object.values(filters);
-        const whereClause = whereKeys.map(k => `"${k}" = ?`).join(' AND ');
+        const whereClause = whereKeys.map((k, i) => `${k} = $${setKeys.length + i + 1}`).join(' AND ');
 
-        const sql = `UPDATE "${table}" SET ${setClause} WHERE ${whereClause}`;
-        const result = db.prepare(sql).run(...setValues, ...whereValues);
+        const sql = `UPDATE ${table} SET ${setClause} WHERE ${whereClause} RETURNING *`;
+        const result = await pool.query(sql, [...setValues, ...whereValues]);
 
         // Sync affected rows to Supabase
-        const updatedRows = db.prepare(`SELECT * FROM "${table}" WHERE ${whereClause}`).all(...whereValues);
-        if (updatedRows.length > 0) {
-            syncToSupabase(table, updatedRows);
+        if (result.rows.length > 0) {
+            syncToSupabase(table, result.rows);
         }
 
-        res.json({ updated: result.changes });
+        res.json({ updated: result.rowCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -477,7 +510,7 @@ app.delete('/api/:table/:id', async (req, res) => {
     const { table, id } = req.params;
     if (!validateTable(table, res)) return;
     try {
-        db.prepare(`DELETE FROM "${table}" WHERE id = ?`).run(id);
+        await pool.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
 
         // Async Sync to Supabase
         syncToSupabase(table, null, 'delete', id);
@@ -497,12 +530,12 @@ app.delete('/api/bulk/:table', async (req, res) => {
         let result;
         if (Object.keys(filters).length === 0) {
             // Delete all in Supabase first (careful!)
-            if (supabase) await supabase.from(table).delete().neq('id', 0);
-            result = db.prepare(`DELETE FROM "${table}"`).run();
+            if (supabase) await supabase.from(table).delete().neq('id', 0); // Supabase delete all
+            result = await pool.query(`DELETE FROM ${table}`);
         } else {
             const keys = Object.keys(filters);
             const values = Object.values(filters);
-            const whereClause = keys.map(k => `"${k}" = ?`).join(' AND ');
+            const whereClause = keys.map((k, i) => `${k} = $${i + 1}`).join(' AND ');
 
             // Sync delete to Supabase
             if (supabase) {
@@ -513,25 +546,19 @@ app.delete('/api/bulk/:table', async (req, res) => {
                 await query;
             }
 
-            result = db.prepare(`DELETE FROM "${table}" WHERE ${whereClause}`).run(...values);
+            result = await pool.query(`DELETE FROM ${table} WHERE ${whereClause}`, values);
         }
-        res.json({ deleted: result.changes });
+        res.json({ deleted: result.rowCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 app.get('/api/config', (req, res) => {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_KEY;
-    if (!url || !key) {
-        console.warn('⚠️ Client requested config but SUPABASE_URL/KEY are missing in environment');
-        return res.json({ error: 'Supabase credentials not configured on server', initialized: false });
-    }
     res.json({
-        supabaseUrl: url,
-        supabaseKey: key,
-        initialized: true
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabaseKey: process.env.SUPABASE_KEY,
+        initialized: !!(process.env.SUPABASE_URL && process.env.SUPABASE_KEY)
     });
 });
 
