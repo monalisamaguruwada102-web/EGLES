@@ -93,14 +93,6 @@ async function initDb() {
                 value DECIMAL(10,2),
                 purchaseDate TEXT
             );
-            CREATE TABLE IF NOT EXISTS timetable (
-                id SERIAL PRIMARY KEY,
-                class TEXT,
-                day TEXT,
-                period TEXT,
-                subject TEXT,
-                teacherId TEXT
-            );
             CREATE TABLE IF NOT EXISTS library (
                 id SERIAL PRIMARY KEY,
                 title TEXT,
@@ -130,7 +122,9 @@ async function initDb() {
                 studentId TEXT,
                 bloodGroup TEXT,
                 allergies TEXT,
-                emergencyContact TEXT
+                emergencyContact TEXT,
+                status TEXT DEFAULT 'FIT',
+                lastCheckup TEXT
             );
             CREATE TABLE IF NOT EXISTS payroll (
                 id SERIAL PRIMARY KEY,
@@ -141,13 +135,6 @@ async function initDb() {
                 bonus DECIMAL(10,2),
                 deductions DECIMAL(10,2),
                 status TEXT
-            );
-            CREATE TABLE IF NOT EXISTS pos (
-                id SERIAL PRIMARY KEY,
-                itemName TEXT,
-                price DECIMAL(10,2),
-                quantity INTEGER,
-                date TEXT
             );
             CREATE TABLE IF NOT EXISTS expenses (
                 id SERIAL PRIMARY KEY,
@@ -294,7 +281,7 @@ initDb();
 // Allowed tables for security
 const ALLOWED_TABLES = [
     'students', 'attendance', 'fees', 'marks', 'staff', 'subjects', 'assets',
-    'timetable', 'library', 'bookLoans', 'discipline', 'health', 'payroll', 'pos',
+    'library', 'bookLoans', 'discipline', 'health', 'payroll',
     'expenses', 'notices', 'hostels', 'hostelAssignments', 'transport',
     'transportAssignments', 'notifications', 'users',
     'public_settings', 'public_achievements', 'public_curriculum', 'public_testimonials'

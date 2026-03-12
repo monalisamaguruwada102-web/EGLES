@@ -667,8 +667,8 @@ const app = {
                                     <div style="display: flex; gap: 1rem; height: 100%;">
                                         <div style="flex: 1; border-right: 1px solid var(--glass-border); padding-right: 1rem;">
                                             <h4 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Health</h4>
-                                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--success);">Fit</div>
-                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Last: 12 Jan</div>
+                                            <div style="font-size: 1.2rem; font-weight: 700; color: ${myHealth && myHealth.status === 'Fit' ? 'var(--success)' : 'var(--warning)'};">${myHealth ? (myHealth.status || 'Fit') : 'Fit'}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Last: ${myHealth ? (myHealth.lastCheckup || 'N/A') : 'N/A'}</div>
                                         </div>
                                         <div style="flex: 1;">
                                             <h4 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Discipline</h4>
@@ -1483,6 +1483,8 @@ const app = {
                         ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
                     </select>
                     <input type="text" id="h-blood" placeholder="Blood Group (e.g. O+)" required>
+                    <input type="text" id="h-status" placeholder="Medical Status (e.g. Fit)" required>
+                    <input type="date" id="h-checkup" required>
                     <textarea id="h-allergies" placeholder="Known Allergies" style="min-height: 100px;"></textarea>
                     <input type="text" id="h-contact" placeholder="Emergency Contact" required>
                     <button type="submit" class="btn-primary" style="width: 100%;">Save Record</button>
@@ -1517,6 +1519,8 @@ const app = {
                 await db.health.put({
                     studentId: document.getElementById('h-student').value,
                     bloodGroup: document.getElementById('h-blood').value,
+                    status: document.getElementById('h-status').value,
+                    lastCheckup: document.getElementById('h-checkup').value,
                     allergies: document.getElementById('h-allergies').value,
                     emergencyContact: document.getElementById('h-contact').value
                 });
@@ -2246,6 +2250,7 @@ const app = {
             return;
         }
         await this.showLoading(1500); // Simulate PDF Generation
+        this.hideLoading();
         const studentMarks = await db.marks.where('studentId').equals(studentId).toArray();
 
         const avgScore = studentMarks.length > 0 ? (studentMarks.reduce((acc, m) => acc + m.score, 0) / studentMarks.length).toFixed(1) : 0;
@@ -2811,7 +2816,7 @@ const app = {
                         <button class="btn-primary" onclick="app.exportToCSV('students')">Export Students</button>
                         <button class="btn-primary" onclick="app.exportToCSV('fees')">Export Financials</button>
                         <button class="btn-primary" onclick="app.exportToCSV('staff')">Export Staff</button>
-                        <button class="btn-primary" onclick="app.exportToCSV('inventory')">Export Inventory</button>
+                        <button class="btn-primary" onclick="app.exportToCSV('assets')">Export Inventory</button>
                     </div>
                 </div>
                 <div class="glass-panel" style="margin: 0;">
@@ -3188,6 +3193,7 @@ const app = {
         const p = await db.payroll.get(parseInt(id));
         const s = await db.staff.where('staffId').equals(p.staffId).first();
         await this.showLoading(1200);
+        this.hideLoading();
         const html = `
             <div class="print-container" style="background:white; color:black; padding:40px; border:2px solid #000;">
                 <h2 style="text-align:center; margin-bottom:0;">EGLES SECONDARY SCHOOL</h2>
