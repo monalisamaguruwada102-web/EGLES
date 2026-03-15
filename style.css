@@ -804,7 +804,7 @@ tr:hover td {
     position: absolute;
     top: calc(100% + 12px);
     right: 0;
-    width: 320px;
+    width: 340px;
     background: var(--bg-card);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
@@ -814,6 +814,16 @@ tr:hover td {
     z-index: 1200;
     overflow: hidden;
     animation: slideDown 0.25s ease;
+}
+
+@media (max-width: 600px) {
+    .notification-panel {
+        position: fixed;
+        width: calc(100vw - 2rem);
+        right: 1rem;
+        left: 1rem;
+        top: 70px;
+    }
 }
 
 @keyframes slideDown {
@@ -837,8 +847,15 @@ tr:hover td {
 }
 
 .notif-list {
-    max-height: 360px;
+    max-height: 450px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 600px) {
+    .notif-list {
+        max-height: 60vh;
+    }
 }
 
 .notif-item {
@@ -1146,6 +1163,24 @@ tr:hover td {
    RESPONSIVE — TABLET (≤ 1024px)
    ============================================= */
 @media (max-width: 1024px) {
+    .top-bar {
+        left: 0;
+        padding: 0 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .top-bar .search-container {
+        display: none;
+    }
+
+    #user-info {
+        margin-left: auto;
+    }
+
+    #user-info #user-display-name {
+        display: none;
+    }
+
     :root {
         --sidebar-width: 240px;
     }
@@ -1258,20 +1293,32 @@ tr:hover td {
     /* Admin header layout */
     .admin-header {
         flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 1rem;
+        align-items: stretch !important;
+        gap: 1.25rem !important;
     }
 
-    .admin-header>div:last-child {
-        width: 100%;
-        flex-wrap: wrap;
-        justify-content: flex-start !important;
+    .admin-header > div:last-child,
+    .admin-header .button-group {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
     }
 
-    /* Forcing buttons to wrap neatly on mobile */
-    .admin-header .button-group button {
-        flex: 1;
-        min-width: 140px;
+    .admin-header button {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0.85rem 1rem !important;
+        justify-content: center;
+        flex: none !important;
+    }
+
+    /* Target specific header inputs */
+    .admin-header input[type="date"],
+    .admin-header input[type="text"],
+    .admin-header select {
+        width: 100% !important;
+        margin: 0 !important;
     }
 
     /* Inline form layouts collapse */

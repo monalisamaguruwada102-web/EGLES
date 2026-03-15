@@ -954,10 +954,13 @@ const app = {
         const today = new Date().toISOString().split('T')[0];
         const exists = await db.notifications.where('title').equals(title).and(n => n.message === message).first();
 
+        // Scrub 'undefined' strings for a cleaner UI
+        const cleanMessage = message.replace(/\(undefined\)/g, '').replace(/undefined/g, 'N/A');
+
         if (!exists) {
             await db.notifications.add({
                 title,
-                message,
+                message: cleanMessage,
                 type,
                 date: new Date().toLocaleString(),
                 read: 0
