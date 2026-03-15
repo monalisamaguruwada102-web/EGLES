@@ -2,13 +2,19 @@ console.log("app.js loaded");
 const app = {
     container: document.getElementById('app-container'),
 
-    async showLoading(delay = 500) {
+    async showLoading(delay = 400) {
         const loader = document.getElementById('global-loader');
         if (loader) {
             loader.style.display = 'block';
             const bar = loader.querySelector('.progress-bar');
-            if (bar) bar.style.width = '30%';
-            setTimeout(() => { if (bar) bar.style.width = '100%'; }, 50);
+            if (bar) {
+                bar.style.transition = 'none';
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.transition = 'width 0.4s cubic-bezier(0.1, 0.7, 0.1, 1)';
+                    bar.style.width = '70%';
+                }, 10);
+            }
         }
         return new Promise(resolve => setTimeout(resolve, delay));
     },
@@ -17,11 +23,17 @@ const app = {
         const loader = document.getElementById('global-loader');
         if (loader) {
             const bar = loader.querySelector('.progress-bar');
-            if (bar) bar.style.width = '100%';
-            setTimeout(() => {
-                loader.style.display = 'none';
-                if (bar) bar.style.width = '0%';
-            }, 300);
+            if (bar) {
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        loader.style.opacity = '1';
+                        bar.style.width = '0%';
+                    }, 400);
+                }, 200);
+            }
         }
     },
 
@@ -93,6 +105,10 @@ const app = {
         const topbar = document.querySelector('.top-bar');
         if (sidebar) sidebar.style.display = 'none';
         if (topbar) topbar.style.display = 'none';
+        
+        this.container.classList.remove('page-content-fade');
+        void this.container.offsetWidth;
+        this.container.classList.add('page-content-fade');
         
         this.container.innerHTML = `
             <div id="public-portal" style="min-height:100vh; background: var(--bg-main); width:100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
@@ -480,35 +496,55 @@ const app = {
 
     async handleStaffAuth(e) {
         e.preventDefault();
-        const username = document.getElementById('auth-user').value.trim();
-        const password = document.getElementById('auth-pass').value;
-        const users = await db.users.toArray();
-        const user = users.find(u => u.username === username && u.password === password);
-        if (user && ['Admin', 'Teacher', 'Staff', 'Bursar'].includes(user.role)) {
-            localStorage.setItem('egles_session', JSON.stringify(user));
-            document.querySelector('.sidebar').style.display = '';
-            document.querySelector('.top-bar').style.display = '';
-            this.init();
-        } else if (user) {
-            alert('This portal is for Staff and Admins only. Use the Student Portal.');
-        } else {
-            alert('Invalid credentials. If you believe this is an error, contact your Administrator.');
+        const btn = e.target.querySelector('button');
+        if (btn) btn.classList.add('loading');
+        
+        try {
+            const username = document.getElementById('auth-user').value.trim();
+            const password = document.getElementById('auth-pass').value;
+            const users = await db.users.toArray();
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            await new Promise(r => setTimeout(r, 600)); // Aesthetic delay
+
+            if (user && ['Admin', 'Teacher', 'Staff', 'Bursar'].includes(user.role)) {
+                localStorage.setItem('egles_session', JSON.stringify(user));
+                document.querySelector('.sidebar').style.display = '';
+                document.querySelector('.top-bar').style.display = '';
+                this.init();
+            } else if (user) {
+                alert('This portal is for Staff and Admins only. Use the Student Portal.');
+            } else {
+                alert('Invalid credentials. If you believe this is an error, contact your Administrator.');
+            }
+        } finally {
+            if (btn) btn.classList.remove('loading');
         }
     },
 
     async handleStudentLogin(e) {
         e.preventDefault();
-        const studentId = document.getElementById('stu-id').value.trim();
-        const name = document.getElementById('stu-name').value.trim().toLowerCase();
-        const students = await db.students.toArray();
-        const student = students.find(s => s.studentId.toLowerCase() === studentId.toLowerCase() && s.name.toLowerCase() === name);
-        if (student) {
-            const session = { role: 'Student', name: student.name, studentId: student.studentId, id: student.id };
-            localStorage.setItem('egles_session', JSON.stringify(session));
-            this.currentUser = session;
-            await this.renderStudentPortal();
-        } else {
-            alert('Student not found. Please check your Student ID and Full Name, then try again.');
+        const btn = e.target.querySelector('button');
+        if (btn) btn.classList.add('loading');
+
+        try {
+            const studentId = document.getElementById('stu-id').value.trim();
+            const name = document.getElementById('stu-name').value.trim().toLowerCase();
+            const students = await db.students.toArray();
+            const student = students.find(s => s.studentId.toLowerCase() === studentId.toLowerCase() && s.name.toLowerCase() === name);
+            
+            await new Promise(r => setTimeout(r, 600)); // Aesthetic delay
+
+            if (student) {
+                const session = { role: 'Student', name: student.name, studentId: student.studentId, id: student.id };
+                localStorage.setItem('egles_session', JSON.stringify(session));
+                this.currentUser = session;
+                await this.renderStudentPortal();
+            } else {
+                alert('Student not found. Please check your Student ID and Full Name, then try again.');
+            }
+        } finally {
+            if (btn) btn.classList.remove('loading');
         }
     },
 
@@ -1081,6 +1117,9 @@ const app = {
             </div>
         `;
 
+        this.container.classList.remove('page-content-fade');
+        void this.container.offsetWidth; // Force reflow
+        
         switch (page) {
             case 'dashboard':
                 await this.renderDashboard();
@@ -1136,6 +1175,8 @@ const app = {
             default:
                 this.container.innerHTML = '<div class="glass-panel"><h1>404 Page Not Found</h1></div>';
         }
+
+        this.container.classList.add('page-content-fade');
         this.hideLoading();
     },
 
