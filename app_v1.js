@@ -512,295 +512,113 @@ const app = {
         }
     },
 
+
+
     async renderStudentPortal() {
-        const sidebar = document.querySelector('.sidebar');
-        const topbar = document.querySelector('.top-bar');
-        if (sidebar) sidebar.style.display = 'none';
-        if (topbar) topbar.style.display = 'none';
+        const student = await db.students.where('studentId').equals(this.currentUser.studentId).first();
+        if (!student) return alert("Student profile error.");
 
-        const user = this.currentUser;
-        const [marks, fees, notices, attendance, subjects, staff, health, discipline, hostelAssignments, hostels, transportAssignments, transport] = await Promise.all([
-            db.marks.toArray(),
-            db.fees.toArray(),
-            db.notices.toArray(),
-            db.attendance.toArray(),
-            db.subjects.toArray(),
-            db.staff.toArray(),
-            db.health.toArray(),
-            db.discipline.toArray(),
-            db.hostelAssignments.toArray(),
-            db.hostels.toArray(),
-            db.transportAssignments.toArray(),
-            db.transport.toArray()
-        ]);
-        
-        const myMarks = marks.filter(m => m.studentId === user.studentId);
-        const myFees = fees.filter(f => f.studentId === user.studentId);
-        const myAttendance = attendance.filter(a => a.studentId === user.studentId);
-        const myLoans = (db.bookLoans ? await db.bookLoans.toArray() : []).filter(l => l.studentId === user.studentId);
-        const myDiscipline = discipline.filter(d => d.studentId === user.studentId);
-        const myHostelAssigned = hostelAssignments.find(ha => ha.studentId === user.studentId);
-        const myHostel = myHostelAssigned ? hostels.find(h => h.id === myHostelAssigned.hostelId) : null;
-        const myTransportAssigned = transportAssignments.find(ta => ta.studentId === user.studentId);
-        const myTransport = myTransportAssigned ? transport.find(t => t.id === myTransportAssigned.routeId) : null;
-        
-        const totalPaid = myFees.reduce((s, f) => s + parseFloat(f.amount || 0), 0);
-        const termFee = 1200; // Standard term fee
-        const balance = Math.max(0, termFee - totalPaid);
-        const presentDays = myAttendance.filter(a => a.status === 'Present').length;
-        const attendancePct = myAttendance.length ? Math.round((presentDays / myAttendance.length) * 100) : 0;
-        
-        const myHealth = health.find(h => h.studentId === user.studentId);
+        const marks = await db.marks.where('studentId').equals(this.currentUser.studentId).toArray();
+        const attendance = await db.attendance.where('studentId').equals(this.currentUser.studentId).toArray();
+        const payments = await db.fees.where('studentId').equals(this.currentUser.studentId).toArray();
+        const notices = await db.notices.toArray();
 
-        const subjectMap = {};
-        myMarks.forEach(m => {
-            if (!subjectMap[m.subject]) subjectMap[m.subject] = [];
-            subjectMap[m.subject].push(m);
-        });
-
-        const teachersMap = staff.filter(s => s.role === 'Teacher' || s.role === 'Admin');
+        // Calculate attendance stats
+        const attTotal = attendance.length;
+        const attPresent = attendance.filter(a => a.status === 'Present').length;
+        const attPercent = attTotal > 0 ? Math.round((attPresent / attTotal) * 100) : 100;
 
         this.container.innerHTML = `
             <div id="student-portal" style="min-height: 100vh; background: var(--bg-main); width: 100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 <div style="max-width:1400px; margin:0 auto; padding:2rem 1rem;">
                     
-                    <!-- Header with Logout -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem; padding: 1.5rem; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--glass-border);">
-                        <div class="logo">EGLES <span>STUDENT</span></div>
-                        <div style="display:flex; align-items:center; gap:1.5rem;">
-                            <div style="text-align:right;" class="desktop-only">
-                                <div style="font-weight:800; color:white;">${user.name}</div>
-                                <div style="font-size:0.75rem; color:var(--primary-bright); font-weight:700;">ACTIVE SESSION</div>
-                            </div>
-                            <button onclick="app.logout()" style="background:var(--danger); color:white; border:none; padding:0.75rem 1.5rem; border-radius:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:0.5rem; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);">
-                                🚪 Secure Logout
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Premium Student Identity Card -->
-                    <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.08)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 3rem; display: flex; flex-wrap: wrap; border-radius: 30px; box-shadow: var(--shadow-lg);">
-                        <div style="flex: 1; min-width: 300px; padding: 3rem; display: flex; gap: 2.5rem; align-items: center;">
-                            <div style="position: relative;">
-                                <div style="width: 140px; height: 140px; border-radius: 30px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 20px 40px var(--primary-glow); border: 5px solid var(--bg-card);">
-                                    ${user.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div style="position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; background: var(--success); border-radius: 50%; border: 4px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">✨</div>
-                            </div>
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
-                                    <span style="background: var(--success-glow); color: var(--success); padding: 5px 15px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid var(--success-glow);">Active Status</span>
-                                    <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Class: ${user.class || 'N/A'}</span>
-                                </div>
-                                <h1 style="margin: 0; font-size: 3rem; font-weight: 900; letter-spacing: -1.5px; background: linear-gradient(to bottom, #ffffff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${user.name}</h1>
-                                <div style="display: flex; gap: 2.5rem; margin-top: 1rem; color: var(--text-muted); font-size: 1.1rem;">
-                                    <span><strong>STUDENT ID:</strong> <span style="color:var(--primary-bright); font-family: monospace;">${user.studentId}</span></span>
-                                    <span><strong>STATUS:</strong> <span style="color:var(--success); font-weight: 700;">REGULAR</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="width: 300px; background: rgba(0,0,0,0.3); border-left: 1px solid var(--glass-border); padding: 3rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                            <div style="width: 150px; height: 150px; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${user.studentId}" alt="Student QR" style="width: 100%; height: 100%;">
-                            </div>
-                            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">SECURE ID GATEWAY</div>
-                        </div>
-                    </div>
-                    </div>
-
-                <!-- Strategic Performance & Info Grid -->
-                <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 2.5rem;" class="mobile-stack">
-                    
-                    <div style="display:flex; flex-direction:column; gap:2.5rem;">
-                        
-                        <!-- MULTIFACETED: Life at Campus Section -->
+                    <!-- Header Section -->
+                    <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; border-radius: 30px; margin-bottom: 2rem; border-left: 8px solid var(--primary);">
                         <div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🏠</div>
-                                <h2 style="margin: 0; font-size: 1.6rem;">Life at Campus</h2>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
-                                
-                                <!-- Hostel Card -->
-                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; position: relative; overflow: hidden; border-radius: 20px;">
-                                    <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem;">🏢 Accommodation</h4>
-                                    ${myHostel ? `
-                                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text);">${myHostel.name}</div>
-                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Room: ${myHostelAssigned.roomNo || 'TBD'}</div>
-                                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); font-size: 0.8rem; color: var(--text-muted);">Status: <span style="color: var(--success); font-weight: 700;">Resident</span></div>
-                                    ` : `
-                                        <div style="color: var(--text-muted); font-size: 0.9rem;">No active hostel assignment.</div>
-                                        <button class="btn-primary" style="margin-top: 1rem; width: 100%; font-size: 0.8rem; padding: 0.5rem;">Request Housing</button>
-                                    `}
-                                </div>
-
-                                <!-- Library Status -->
-                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
-                                    <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem;">📚 Resource Center</h4>
-                                    <div style="font-size: 1.2rem; font-weight: 700;">${myLoans.length} Books Loaned</div>
-                                    <div style="font-size: 0.9rem; color: ${myLoans.some(l => l.isOverdue) ? 'var(--danger)' : 'var(--text-muted)'}; margin-top: 0.25rem;">
-                                        ${myLoans.some(l => l.isOverdue) ? '⚠️ 1 Overdue item' : 'All returns on time'}
-                                    </div>
-                                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                                        <div style="flex: 1; height: 4px; background: var(--success); border-radius: 2px;"></div>
-                                        <div style="flex: 1; height: 4px; background: var(--glass-border); border-radius: 2px;"></div>
-                                        <div style="flex: 1; height: 4px; background: var(--glass-border); border-radius: 2px;"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Transport Card -->
-                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
-                                    <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">🚌 Mobility</h4>
-                                    ${myTransport ? `
-                                        <div style="font-size: 1.2rem; font-weight: 700;">${myTransport.route || 'N/A'}</div>
-                                        <div style="font-size: 0.9rem; color: var(--primary-bright); margin-top: 0.25rem;">Bus: ${myTransport.busNo || 'N/A'}</div>
-                                        <div style="margin-top: 1rem; font-size: 0.8rem; font-weight: 600; color: var(--success);">• Driver: ${myTransport.driver || 'N/A'}</div>
-                                    ` : `
-                                        <div style="color: var(--text-muted); font-size: 0.9rem;">No active routes.</div>
-                                        <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">Please visit the Transport Office for registration.</div>
-                                    `}
-                                </div>
-
-                                <!-- Behavior & Health -->
-                                <div class="glass-panel" style="margin: 0; padding: 1.5rem; border-radius: 20px;">
-                                    <div style="display: flex; gap: 1rem; height: 100%;">
-                                        <div style="flex: 1; border-right: 1px solid var(--glass-border); padding-right: 1rem;">
-                                            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Health</h4>
-                                            <div style="font-size: 1.2rem; font-weight: 700; color: ${myHealth && myHealth.status === 'Fit' ? 'var(--success)' : 'var(--warning)'};">${myHealth ? (myHealth.status || 'Fit') : 'Fit'}</div>
-                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Last: ${myHealth ? (myHealth.lastCheckup || 'N/A') : 'N/A'}</div>
-                                        </div>
-                                        <div style="flex: 1;">
-                                            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Discipline</h4>
-                                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--warning);">${myDiscipline.length > 0 ? 'Review' : 'Perfect'}</div>
-                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${myDiscipline.length} Records</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <span style="color: var(--primary); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;">Student Gateway</span>
+                            <h1 style="font-size: 2.5rem; margin-top: 0.5rem;">Evening, ${student.name.split(' ')[0]} 👋</h1>
+                            <p style="margin:0;">Academic Year 2026 | ${student.class}</p>
                         </div>
+                        <div style="display: flex; gap: 1rem;">
+                             <button onclick="app.logout()" class="btn-primary" style="background: var(--danger);">Logout</button>
+                        </div>
+                    </div>
 
-                        <!-- Academic Results -->
-                        <div class="glass-panel" style="margin:0; overflow-x:auto; border-radius: 24px; padding: 2rem;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-                                <h3 style="margin:0; font-size: 1.5rem;">📝 Academic Records</h3>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--glass-border);">Print Transcript</button>
-                                    <span style="background:var(--primary-glow); color:var(--primary-bright); padding:6px 14px; border-radius:20px; font-size:0.75rem; font-weight:800; text-transform: uppercase;">Live Sync</span>
+                    <div class="dashboard-grid mobile-stack" style="grid-template-columns: 2fr 1fr; gap: 2rem;">
+                        <!-- Left Column: Results & Info -->
+                        <div style="display: flex; flex-direction: column; gap: 2rem;">
+                            
+                            <!-- Result Overview -->
+                            <div class="glass-panel" style="margin: 0; border-radius: 30px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                                    <h2>Academic Achievement</h2>
+                                    <div style="background: var(--primary-glow); padding: 8px 16px; border-radius: 12px; color: var(--primary-bright); font-weight: 700;">Term 1 Report</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
+                                    ${marks.length === 0 ? '<p>No results posted yet.</p>' : marks.map(m => `
+                                        <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                                            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">${m.subject}</div>
+                                            <div style="display: flex; justify-content: space-between; align-items: end;">
+                                                <div style="font-size: 2.25rem; font-weight: 800; color: white;">${m.score}%</div>
+                                                <div style="color: var(--primary); font-weight: 900; font-size: 1.2rem; margin-bottom: 0.3rem;">${this.calculateGrade(m.score)}</div>
+                                            </div>
+                                            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-top: 1rem; overflow: hidden;">
+                                                <div style="width: ${m.score}%; height: 100%; background: var(--primary); border-radius: 10px;"></div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
                                 </div>
                             </div>
-                            ${Object.keys(subjectMap).length === 0
-                ? '<div style="padding:4rem; text-align:center;"><p style="color:var(--text-muted);">Examination results pending upload.</p></div>'
-                : `<table style="width:100%; border-collapse:separate; border-spacing: 0 1rem; min-width:600px;">
-                                    <thead><tr style="text-align:left; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                                        <th style="padding:0 1rem;">Subject</th>
-                                        <th style="padding:0 1rem;">Term Info</th>
-                                        <th style="padding:0 1rem;">Performance</th>
-                                        <th style="padding:0 1rem;">Letter Grade</th>
-                                    </tr></thead>
+
+                            <!-- Financial Status -->
+                            <div class="glass-panel" style="margin:0; border-radius: 30px;">
+                                <h2>Finance & Billing</h2>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="text-align: left; opacity: 0.5;">
+                                            <th style="padding: 1rem;">Service/Item</th>
+                                            <th style="padding: 1rem;">Date</th>
+                                            <th style="padding: 1rem;">Amount</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
-                                        ${myMarks.map(m => `
-                                            <tr style="background: rgba(255,255,255,0.02); border-radius: 12px;">
-                                                <td style="padding:1.25rem 1rem; font-weight:700; font-size:1.1rem; border-radius: 12px 0 0 12px;">${m.subject}</td>
-                                                <td style="padding:1.25rem 1rem; color:var(--text-muted); font-size: 0.95rem;">${m.term} &bull; ${m.year}</td>
-                                                <td style="padding:1.25rem 1rem;">
-                                                    <div style="display:flex; align-items:center; gap:1rem;">
-                                                        <div style="flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:100px; max-width:120px; overflow:hidden;">
-                                                            <div style="height:100%; border-radius:100px; background:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; width:${m.score}%; box-shadow:0 0 15px ${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'};"></div>
-                                                        </div>
-                                                        <span style="font-weight:800; font-family: monospace;">${m.score}%</span>
-                                                    </div>
-                                                </td>
-                                                <td style="padding:1.25rem 1rem; border-radius: 0 12px 12px 0;">
-                                                    <span style="display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; border-radius: 50%; font-weight: 900; background:${m.score >= 80 ? 'rgba(16,185,129,0.1)' : m.score >= 60 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'}; color:${m.score >= 80 ? 'var(--success)' : m.score >= 60 ? 'var(--warning)' : 'var(--danger)'}; border: 1px solid ${m.score >= 80 ? 'rgba(16,185,129,0.2)' : m.score >= 60 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'};">
-                                                        ${this.calculateGrade(m.score)}
-                                                    </span>
-                                                </td>
+                                        ${payments.length === 0 ? '<tr><td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-muted);">No payment records found.</td></tr>' : payments.map(p => `
+                                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                                <td style="padding: 1rem; font-weight: 600;">${p.type || 'Tuition Fee'}</td>
+                                                <td style="padding: 1rem; color: var(--text-muted);">${p.date}</td>
+                                                <td style="padding: 1rem; color: var(--success); font-weight: 800;">$${p.amount}</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
-                                </table>`
-            }
-                        </div>
-
-                        <!-- ENHANCED Faculty Directory -->
-                        <div class="glass-panel" style="margin:0; border-radius: 24px; padding: 2rem;">
-                            <h3 style="margin:0 0 2rem 0; font-size: 1.5rem;">👨‍🏫 Department Faculty</h3>
-                            ${teachersMap.length === 0
-                ? '<p style="color:var(--text-muted);">Faculty profiles loading...</p>'
-                : `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1.5rem;">
-                                    ${teachersMap.map(t => {
-                    const teacherSubjects = subjects.filter(s => s.teacherId === t.staffId);
-                    return `
-                                            <div class="faculty-card" onclick="app.showFacultyProfile('${t.staffId}')" style="background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:1.5rem; border-radius:20px; transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.background='rgba(255,255,255,0.05)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.transform='translateY(0)'">
-                                                <div style="display:flex; gap:1.25rem; align-items:flex-start;">
-                                                    <div style="width:64px; height:64px; border-radius:20px; background: var(--bg-card); border: 1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-size:1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                                                        ${t.role === 'Admin' ? '🤵' : '👨‍🏫'}
-                                                    </div>
-                                                    <div>
-                                                        <div style="font-weight:800; color:var(--text); font-size:1.15rem; margin-bottom:0.25rem;">${t.name}</div>
-                                                        <div style="color:var(--primary-bright); font-size:0.8rem; text-transform:uppercase; font-weight: 700; letter-spacing:1px; margin-bottom:1rem;">Senior Faculty &bull; ${t.role}</div>
-                                                        <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
-                                                            ${teacherSubjects.length > 0
-                            ? teacherSubjects.map(ts => `<span style="background:var(--primary-glow); color:var(--primary-bright); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight: 700; border: 1px solid rgba(99,102,241,0.2);">${ts.name}</span>`).join('')
-                            : `<span style="color:var(--text-muted); font-size:0.8rem;">General Administration</span>`
-                        }
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>`
-                }).join('')}
-                                </div>`
-            }
-                        </div>
-
-                    </div>
-
-                    <!-- Right Column: Live Metrics, Fees & Notices -->
-                    <div style="display:flex; flex-direction:column; gap:2.5rem;">
-                        
-                        <!-- Financial Overview Card -->
-                        <div class="glass-panel" style="margin:0; border-radius: 24px; padding: 2rem; background: linear-gradient(180deg, var(--bg-card), rgba(16,185,129,0.03));">
-                            <h3 style="margin-bottom:1.5rem; display: flex; align-items: center; gap: 0.5rem;">💳 Fee Statement</h3>
-                            <div style="background: rgba(0,0,0,0.2); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                                <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Balance Remaining</div>
-                                <div style="font-size: 2.5rem; font-weight: 900; color: ${balance > 0 ? 'var(--danger)' : 'var(--success)'};">$${balance.toFixed(2)}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">${balance > 0 ? 'Urgent attention required.' : 'Account settled.'}</div>
+                                </table>
                             </div>
-                            ${myFees.length === 0
-                ? '<div style="text-align:center; padding: 1rem;"><div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎉</div><p style="color: var(--success); font-weight: 600; font-size: 0.9rem;">Excellent! Your account is fully settled.</p></div>'
-                : `<div style="max-height: 400px; overflow-y: auto;">
-                                    ${myFees.map(f => `
-                                        <div style="padding: 1rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
-                                            <div>
-                                                <div style="font-weight: 700; font-size: 0.95rem;">${f.type}</div>
-                                                <div style="font-size: 0.75rem; color: var(--text-muted);">${f.date}</div>
-                                            </div>
-                                            <div style="font-weight: 800; color: var(--success);">$${parseFloat(f.amount).toFixed(2)}</div>
-                                        </div>
-                                    `).join('')}
-                                </div>`
-            }
-                            <button class="btn-primary" style="width: 100%; margin-top: 1.5rem; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--glass-border);">View Full Receipt History</button>
                         </div>
 
-                        <!-- Notices Card -->
-                        <div class="glass-panel" style="margin:0; border-radius: 24px; padding: 2rem;">
-                            <h3 style="margin-bottom:1.5rem; display: flex; align-items: center; gap: 0.5rem;">📢 School Bulletins</h3>
-                            ${notices.length === 0
-                ? '<p style="color:var(--text-muted);">Quiet on the bulletin board today.</p>'
-                : `<div style="display:flex; flex-direction:column; gap:1.25rem;">
-                                    ${notices.slice(-5).reverse().map(n => `
-                                        <div style="padding:1.25rem; border-left:4px solid ${n.priority === 'High' ? 'var(--danger)' : n.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}; background:rgba(255,255,255,0.02); border-radius: 0 16px 16px 0; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">
-                                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
-                                                <div style="font-weight:800; color:white; line-height:1.3; font-size: 0.95rem;">${n.title}</div>
-                                                <span style="font-size:0.65rem; color:var(--text-muted); letter-spacing: 0.5px; font-weight: 700;">${n.date}</span>
-                                            </div>
-                                            <div style="color:var(--text-muted); font-size:0.85rem; line-height:1.5;">${n.content}</div>
+                        <!-- Right Column: Sidebar Stats -->
+                        <div style="display: flex; flex-direction: column; gap: 2rem;">
+                            
+                            <!-- Attendance Card -->
+                            <div class="glass-panel" style="margin: 0; text-align: center; border-radius: 30px; position: relative; overflow: hidden;">
+                                <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.05;">📅</div>
+                                <h3 style="margin-bottom: 1.5rem;">Class Attendance</h3>
+                                <div style="font-size: 4rem; font-weight: 900; color: var(--accent); line-height: 1;">${attPercent}%</div>
+                                <p style="margin-top: 0.5rem; font-weight: 600;">Overall Rating</p>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1.5rem;">Successfully attended ${attPresent} out of ${attTotal} sessions this term.</div>
+                            </div>
+
+                            <!-- Notice Board Card -->
+                            <div class="glass-panel" style="margin: 0; border-radius: 30px;">
+                                <h3 style="margin-bottom: 1.5rem;">Campus Notices</h3>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    ${notices.length === 0 ? '<p style="color: var(--text-muted);">No notices today.</p>' : notices.slice(-3).reverse().map(n => `
+                                        <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 16px; border-left: 3px solid var(--primary);">
+                                            <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem;">${n.title}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${n.date}</div>
                                         </div>
                                     `).join('')}
-                                </div>`
-            }
+                                </div>
+                                <button class="btn-primary" style="width: 100%; margin-top: 1.5rem; background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border);" onclick="alert('Digital Archives available in Admin Block')">View Archives</button>
+                            </div>
                         </div>
 
                     </div>
@@ -808,10 +626,10 @@ const app = {
             </div>
 
             <style>
+                #student-portal { overflow-x: hidden; }
                 @media (max-width: 900px) {
+                    #student-portal { width: 100% !important; margin-left: 0 !important; }
                     .mobile-stack { grid-template-columns: 1fr !important; }
-                    .glass-panel[style*="display: flex; flex-wrap: wrap"] { flex-direction: column !important; }
-                    .glass-panel > div[style*="width: 250px"] { width: 100% !important; border-left: none !important; border-top: 1px solid var(--glass-border) !important; padding: 2rem !important; }
                 }
             </style>
         `;
@@ -1408,64 +1226,7 @@ const app = {
         }
     },
 
-    async renderDiscipline() {
-        const discipline = await db.discipline.toArray();
-        const students = await db.students.toArray();
 
-        this.container.innerHTML = `
-            <h1>Disciplinary Tracker</h1>
-            <div class="mobile-stack" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
-                <form id="disc-form" class="glass-panel" style="margin: 0;">
-                    <h2>Record Infraction</h2>
-                    <select id="ds-student" required>
-                        <option value="">Select Student</option>
-                        ${students.map(s => `<option value="${s.studentId}">${s.name}</option>`).join('')}
-                    </select>
-                    <input type="text" id="ds-infraction" placeholder="Reason (e.g. Late for class)" required>
-                    <select id="ds-severity">
-                        <option value="Minor">Minor</option>
-                        <option value="Moderate">Moderate</option>
-                        <option value="Severe">Severe</option>
-                    </select>
-                    <button type="submit" class="btn-primary" style="width: 100%;">Log Incident</button>
-                </form>
-                <div class="glass-panel" style="margin: 0;">
-                    <h2>Incident Log</h2>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="text-align: left;">
-                                <th style="padding: 1rem;">Student</th>
-                                <th style="padding: 1rem;">Infraction</th>
-                                <th style="padding: 1rem;">Severity</th>
-                                <th style="padding: 1rem;">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${discipline.map(d => `
-                                <tr>
-                                    <td style="padding: 1rem;">${students.find(s => s.studentId === d.studentId)?.name || d.studentId}</td>
-                                    <td style="padding: 1rem;">${d.infraction}</td>
-                                    <td style="padding: 1rem;"><span style="color: ${d.severity === 'Severe' ? 'var(--danger)' : d.severity === 'Moderate' ? 'var(--warning)' : 'var(--success)'}">${d.severity}</span></td>
-                                    <td style="padding: 1rem;">${d.date}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('disc-form').onsubmit = async (e) => {
-            e.preventDefault();
-            await db.discipline.add({
-                studentId: document.getElementById('ds-student').value,
-                infraction: document.getElementById('ds-infraction').value,
-                severity: document.getElementById('ds-severity').value,
-                date: new Date().toLocaleDateString()
-            });
-            this.renderDiscipline();
-        };
-    },
 
     async renderHealth() {
         const records = await db.health.toArray();
@@ -1747,106 +1508,9 @@ const app = {
         }
     },
 
-    async renderDashboard() {
-        const studentCount = await db.students.count();
-        const totalFees = await db.fees.toArray();
-        const sumFees = totalFees.reduce((acc, f) => acc + parseFloat(f.amount), 0);
 
-        this.container.innerHTML = `
-            <div class="dashboard-grid">
-                <h1>Academic Dashboard</h1>
-                <div class="stats-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                    <div class="stat-card glass-panel" style="margin:0; padding: 1.5rem;">
-                        <h3>Total Students</h3>
-                        <p style="font-size: 2rem; color: var(--primary-bright); font-weight: 700;">${studentCount}</p>
-                    </div>
-                    <div class="stat-card glass-panel" style="margin:0; padding: 1.5rem;">
-                        <h3>Fees Collected</h3>
-                        <p style="font-size: 2rem; color: var(--success); font-weight: 700;">$${sumFees.toFixed(2)}</p>
-                    </div>
-                </div>
-                <div class="glass-panel" style="margin:0;">
-                    <h2>Quick Actions</h2>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button class="btn-primary" onclick="app.navigate('students')">Register Student</button>
-                        <button class="btn-primary" style="background: var(--secondary);" onclick="app.navigate('exams')">Record Marks</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
 
-    async renderStaff() {
-        const staffList = await db.staff.toArray();
-        this.container.innerHTML = `
-            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h1>Staff Management</h1>
-                <div class="button-group" style="display: flex; gap: 1rem;">
-                    <button class="btn-primary" onclick="app.exportToCSV('staff')" style="background: var(--success);">Export Staff (CSV)</button>
-                    <button class="btn-primary" onclick="app.showStaffForm()">Register Staff</button>
-                </div>
-            </div>
-            
-            <div class="glass-panel" style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr style="text-align: left; border-bottom: 2px solid var(--glass-border);">
-                            <th style="padding: 1rem;">Staff ID</th>
-                            <th style="padding: 1rem;">Name</th>
-                            <th style="padding: 1rem;">Role</th>
-                            <th style="padding: 1rem;">Contact</th>
-                            <th style="padding: 1rem;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${staffList.map(s => `
-                            <tr style="border-bottom: 1px solid var(--glass-border);">
-                                <td style="padding: 1rem;"><span style="color: var(--primary); font-weight: 600;">${s.staffId}</span></td>
-                                <td style="padding: 1rem;">${s.name}</td>
-                                <td style="padding: 1rem;"><span class="status-pill" style="background: var(--glass-bg); border: 1px solid var(--glass-border);">${s.role}</span></td>
-                                <td style="padding: 1rem; color: var(--text-muted);">${s.contact}</td>
-                                <td style="padding: 1rem;">
-                                    <button onclick="app.deleteStaff(${s.id})" style="color: var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">Remove</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
 
-            <div id="staff-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px);">
-                <div class="glass-panel" style="width: 90%; max-width: 500px; border: 1px solid var(--primary);">
-                    <h2 class="card-title">New Staff Registration</h2>
-                    <form id="staff-form">
-                        <input type="text" id="st-name" placeholder="Full Name" required>
-                        <select id="st-role" required>
-                            <option value="Teacher">Teacher</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Bursar">Bursar</option>
-                            <option value="Support">Support Staff</option>
-                        </select>
-                        <input type="text" id="st-contact" placeholder="Contact Number" required>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                            <button type="submit" class="btn-primary">Register Staff</button>
-                            <button type="button" class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="document.getElementById('staff-modal').classList.add('hidden')">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('staff-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const staff = {
-                staffId: 'ST-' + Math.floor(Math.random() * 9000 + 1000),
-                name: document.getElementById('st-name').value,
-                role: document.getElementById('st-role').value,
-                contact: document.getElementById('st-contact').value
-            };
-            await db.staff.add(staff);
-            this.renderStaff();
-        };
-    },
 
     showStaffForm() {
         document.getElementById('staff-modal').classList.remove('hidden');
@@ -2831,21 +2495,7 @@ const app = {
         `;
     },
 
-    async exportToCSV(table) {
-        const data = await db[table].toArray();
-        if (data.length === 0) return alert('No data to export.');
 
-        const headers = Object.keys(data[0]).join(',');
-        const rows = data.map(item => Object.values(item).map(v => `"${v}"`).join(','));
-        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows.join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `egles_${table}_${new Date().toLocaleDateString()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-    },
 
     async renderHostels() {
         const hostels = await db.hostels.toArray();
@@ -2950,6 +2600,7 @@ const app = {
                                 <th>Role</th>
                                 <th>Staff ID</th>
                                 <th>Contact</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2959,6 +2610,9 @@ const app = {
                                     <td><span class="status-pill" style="background: var(--primary); color: white;">${s.role}</span></td>
                                     <td style="font-family: monospace; color: var(--primary);">${s.staffId}</td>
                                     <td>${s.contact}</td>
+                                    <td>
+                                        <button onclick="app.deleteStaff(${s.id})" style="color: var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">Remove</button>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
