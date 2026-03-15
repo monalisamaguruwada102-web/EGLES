@@ -53,6 +53,9 @@ const app = {
     async init() {
         this.container = document.getElementById('app-container');
         this.loadTheme();
+        
+        // Data Integrity Check
+        await this.fixData();
 
         if (this.checkAuth()) {
             const user = this.currentUser;
@@ -536,7 +539,12 @@ const app = {
             await new Promise(r => setTimeout(r, 600)); // Aesthetic delay
 
             if (student) {
-                const session = { role: 'Student', name: student.name, studentId: student.studentId, id: student.id };
+                const session = { 
+                    role: 'Student', 
+                    name: student.name, 
+                    studentId: student.studentId || student.studentid, 
+                    id: student.id 
+                };
                 localStorage.setItem('egles_session', JSON.stringify(session));
                 this.currentUser = session;
                 await this.renderStudentPortal();
@@ -551,12 +559,12 @@ const app = {
 
 
     async renderStudentPortal() {
-        const student = await db.students.where('studentId').equals(this.currentUser.studentId).first();
+        const student = await db.students.get(this.currentUser.id);
         if (!student) return alert("Student profile error.");
 
-        const marks = await db.marks.where('studentId').equals(this.currentUser.studentId).toArray();
-        const attendance = await db.attendance.where('studentId').equals(this.currentUser.studentId).toArray();
-        const payments = await db.fees.where('studentId').equals(this.currentUser.studentId).toArray();
+        const marks = await db.marks.where('studentId').equals(student.studentId).toArray();
+        const attendance = await db.attendance.where('studentId').equals(student.studentId).toArray();
+        const payments = await db.fees.where('studentId').equals(student.studentId).toArray();
         const notices = await db.notices.toArray();
 
         // Calculate attendance stats
@@ -568,15 +576,32 @@ const app = {
             <div id="student-portal" style="min-height: 100vh; background: var(--bg-main); width: 100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 <div style="max-width:1400px; margin:0 auto; padding:2rem 1rem;">
                     
-                    <!-- Header Section -->
-                    <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; border-radius: 30px; margin-bottom: 2rem; border-left: 8px solid var(--primary);">
-                        <div>
-                            <span style="color: var(--primary); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;">Student Gateway</span>
-                            <h1 style="font-size: 2.5rem; margin-top: 0.5rem;">Evening, ${student.name.split(' ')[0]} 👋</h1>
-                            <p style="margin:0;">Academic Year 2026 | ${student.class}</p>
+                    <!-- PREMIUM IDENTITY HEADER -->
+                    <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.08)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 3rem; display: flex; flex-wrap: wrap; border-radius: 30px; box-shadow: var(--shadow-lg);">
+                        <div style="flex: 1; min-width: 300px; padding: 3rem; display: flex; gap: 2.5rem; align-items: center;">
+                            <div style="position: relative;">
+                                <div style="width: 120px; height: 120px; border-radius: 30px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 900; box-shadow: 0 20px 40px var(--primary-glow); border: 5px solid var(--bg-card);">
+                                    ${student.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div style="position: absolute; bottom: 0; right: 0; width: 34px; height: 34px; background: var(--success); border-radius: 50%; border: 4px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 1rem;">✨</div>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <span style="background: var(--success-glow); color: var(--success); padding: 4px 12px; border-radius: 100px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">Active</span>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">System verified</span>
+                                </div>
+                                <h1 style="margin: 0; font-size: 2.8rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(to bottom, #ffffff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${student.name}</h1>
+                                <div style="display: flex; gap: 2rem; margin-top: 0.75rem; color: var(--text-muted); font-size: 1rem;">
+                                    <span><strong>ID:</strong> <span style="color:var(--primary-bright); font-family: monospace;">${student.studentId}</span></span>
+                                    <span><strong>CLASS:</strong> <span style="color:white; font-weight: 700;">${student.class}</span></span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="display: flex; gap: 1rem;">
-                             <button onclick="app.logout()" class="btn-primary" style="background: var(--danger);">Logout</button>
+                        <div style="width: 280px; background: rgba(0,0,0,0.3); border-left: 1px solid var(--glass-border); padding: 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <button onclick="app.logout()" class="btn-primary" style="width: 100%; margin-bottom: 1.5rem; background: var(--danger);">Secure Logout</button>
+                            <div style="width: 100px; height: 100px; background: white; padding: 10px; border-radius: 15px;">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${student.studentId}" style="width: 100%;">
+                            </div>
                         </div>
                     </div>
 
@@ -2437,6 +2462,33 @@ const app = {
 
         update();
         setInterval(update, 60000);
+    },
+
+    async fixData() {
+        try {
+            const students = await db.students.toArray();
+            let fixesApplied = 0;
+            for (const s of students) {
+                if (!s.studentId) {
+                    const ts = Date.now().toString().slice(-4);
+                    const newId = `EST26${String(s.id).padStart(3, '0')}${ts}`;
+                    await db.students.update(s.id, { studentId: newId });
+                    fixesApplied++;
+                }
+            }
+            const staff = await db.staff.toArray();
+            for (const s of staff) {
+                if (!s.staffId) {
+                    const prefix = s.role === 'Admin' ? 'ADM' : 'TCH';
+                    const newId = `${prefix}-${26}${String(s.id).padStart(3, '0')}`;
+                    await db.staff.update(s.id, { staffId: newId });
+                    fixesApplied++;
+                }
+            }
+            if (fixesApplied > 0) console.log(`System: Applied ${fixesApplied} data integrity fixes.`);
+        } catch (e) {
+            console.warn("Integrity check bypassed:", e.message);
+        }
     },
 
     calculateGrade(score) {

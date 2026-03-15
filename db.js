@@ -55,6 +55,11 @@ class QueryBuilder {
             data = data.filter(this.filterFunc);
         }
 
+        // Normalize rows if table exists in db
+        if (db[this.tableName] && db[this.tableName].normalize) {
+            data = data.map(item => db[this.tableName].normalize(item));
+        }
+
         return data;
     }
 
@@ -96,13 +101,27 @@ class TableProxy {
     }
 
     async toArray() {
-        return new QueryBuilder(this.tableName).toArray();
+        const results = await new QueryBuilder(this.tableName).toArray();
+        return results.map(row => this.normalize(row));
+    }
+
+    normalize(row) {
+        if (!row) return row;
+        // Handle PostgreSQL lowercase column names
+        if (row.studentid && !row.studentId) row.studentId = row.studentid;
+        if (row.staffid && !row.staffId) row.staffId = row.staffid;
+        if (row.teacherid && !row.teacherId) row.teacherId = row.teacherid;
+        if (row.hostelid && !row.hostelId) row.hostelId = row.hostelid;
+        if (row.routeid && !row.routeId) row.routeId = row.routeid;
+        if (row.parentcontact && !row.parentContact) row.parentContact = row.parentcontact;
+        return row;
     }
 
     async get(id) {
         const res = await fetch(`${API_URL}/${this.tableName}/${id}`);
         if (!res.ok) return undefined;
-        return await res.json();
+        const row = await res.json();
+        return this.normalize(row);
     }
 
     async add(data) {
