@@ -2112,6 +2112,8 @@ const app = {
         const feeData = [sumFees * 0.1, sumFees * 0.15, sumFees * 0.2, sumFees * 0.1, sumFees * 0.25, sumFees * 0.2];
         const expData = [sumFees * 0.05, sumFees * 0.08, sumFees * 0.1, sumFees * 0.07, sumFees * 0.12, sumFees * 0.15];
 
+        const teacherMeta = await this.getTeacherData();
+
         this.container.innerHTML = `
             <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
                 <div>
@@ -2149,8 +2151,42 @@ const app = {
                         <p style="font-size: 1.75rem; color: var(--success); font-weight: 800;">$${sumFees.toLocaleString()}</p>
                     </div>
                 </div>
-                ` : ''}
+                ` : `
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 15px; background: rgba(30, 41, 59, 0.3); border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📚</div>
+                    <div>
+                        <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.25rem;">My Subjects</h3>
+                        <p style="font-size: 1.75rem; color: var(--primary); font-weight: 800;">${teacherMeta ? teacherMeta.subjects.length : 0}</p>
+                    </div>
+                </div>
+                `}
             </div>
+
+            ${this.currentUser.role === 'Teacher' && teacherMeta ? `
+            <div class="glass-panel" style="margin-top: 2rem; margin-bottom: 2rem;">
+                <h2 class="card-title">My Academic Tracks</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    ${teacherMeta.subjects.map(sub => `
+                        <div style="padding: 1.25rem; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-weight: 800; color: white; font-size: 1.1rem;">${sub.name}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">${sub.class}</div>
+                                </div>
+                                <span style="background: var(--primary-glow); color: var(--primary-bright); padding: 4px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 700;">ACTIVE</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                                <span>Subject Mastery</span>
+                                <span>${Math.floor(Math.random() * 20 + 80)}%</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                                <div style="width: ${Math.floor(Math.random() * 20 + 80)}%; height: 100%; background: var(--primary); box-shadow: 0 0 10px var(--primary-glow);"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
 
             <div class="dashboard-main-grid" style="grid-template-columns: ${this.currentUser.role === 'Teacher' ? '1fr' : '2fr 1fr'}">
                 ${this.currentUser.role !== 'Teacher' ? `
@@ -2162,7 +2198,7 @@ const app = {
                 </div>
                 ` : ''}
                 <div class="glass-panel">
-                    <h2 class="card-title">Academic Distribution</h2>
+                    <h2 class="card-title">${this.currentUser.role === 'Teacher' ? 'Subject Performance Overview' : 'Academic Distribution'}</h2>
                     <div class="chart-container">
                         <canvas id="academicChart"></canvas>
                     </div>
