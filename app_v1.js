@@ -116,18 +116,17 @@ const app = {
             <div id="public-portal" style="min-height:100vh; background: var(--bg-main); width:100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 
                 <!-- Premium Hero Section -->
-                <div style="background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99,102,241,0.15) 100%); padding: 6rem 1rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border); text-align:center;">
-                    <div style="position:absolute; top:-50px; right:-50px; font-size:15rem; opacity:0.03; pointer-events:none;">🏫</div>
+                <div style="background: linear-gradient(135deg, rgba(2, 6, 23, 0.85) 0%, rgba(99,102,241,0.65) 100%), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-07-at-22.50.00-1.jpeg') center/cover no-repeat; padding: 6rem 1rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border); text-align:center;">
                     <div style="max-width:1200px; margin:0 auto; position:relative; z-index:10;">
                         <div style="display:inline-block; padding:0.4rem 1.2rem; background:var(--primary-glow); color:var(--primary-bright); border-radius:100px; font-size:0.8rem; font-weight:700; margin-bottom:1.5rem; letter-spacing:2px; text-transform:uppercase; border: 1px solid var(--primary-glow);">Official Gateway</div>
                         <h1 style="font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight:900; letter-spacing:-2px; line-height:1.1; margin-bottom:1.5rem; background:linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">EGLES <span style="color:var(--primary-bright); -webkit-text-fill-color:var(--primary-bright);">SMIS</span></h1>
-                        <p style="color:var(--text-muted); font-size:1.25rem; max-width:700px; margin:0 auto 3rem; line-height:1.7;">A state-of-the-art management system for the leaders of tomorrow. Seamlessly connecting students, staff, and parents in a secure digital ecosystem.</p>
+                        <p style="color:#e2e8f0; font-size:1.25rem; max-width:700px; margin:0 auto 3rem; line-height:1.7;">A state-of-the-art management system for the leaders of tomorrow. Seamlessly connecting students, staff, and parents in a secure digital ecosystem.</p>
                         
                         <div style="display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
                             <button onclick="app.showStudentLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; box-shadow:0 15px 40px var(--primary-glow); border-radius:15px; border:none; background:var(--primary); color:white; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
                                 🎓 Student Portal
                             </button>
-                            <button onclick="app.showStaffLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; background:rgba(255,255,255,0.05); color:var(--text); box-shadow:none; border:1px solid var(--glass-border); border-radius:15px; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
+                            <button onclick="app.showStaffLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; background:rgba(255,255,255,0.1); color:white; box-shadow:none; border:1px solid rgba(255,255,255,0.2); border-radius:15px; cursor:pointer; display:flex; align-items:center; gap:0.5rem; backdrop-filter: blur(10px);">
                                 🔐 Staff Login
                             </button>
                         </div>
@@ -153,34 +152,30 @@ const app = {
                         <h2 style="font-size: 2.5rem; margin-bottom: 2rem; text-align: center; font-weight: 800;">📍 Campus Explorer</h2>
                         <div style="position: relative; width: 100%; height: 500px; background: var(--bg-card); border-radius: 30px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(var(--glass-border) 1.5px, transparent 1.5px); background-size: 30px 30px;">
                             <!-- Main Academic Block -->
-                            <div class="map-node" style="position: absolute; top: 25%; left: 15%; width: 180px; height: 120px; background: rgba(99, 102, 241, 0.15); border: 2px solid var(--primary); border-radius: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);" onmouseover="this.style.transform='scale(1.1) translateY(-10px)'; this.style.background='rgba(99, 102, 241, 0.3)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.background='rgba(99, 102, 241, 0.15)'">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 2rem;">🏢</div>
-                                    <div style="font-weight: 700; font-size: 0.9rem;">Academic HQ</div>
+                            <div class="map-node" style="position: absolute; top: 25%; left: 15%; width: 180px; height: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/OIP-2.jpeg') center/cover; border: 2px solid var(--primary); border-radius: 20px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);" onmouseover="this.style.transform='scale(1.1) translateY(-10px)'; this.style.borderColor='var(--primary-bright)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.borderColor='var(--primary)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px;">Academic HQ</div>
                                 </div>
                             </div>
                             <!-- Library -->
-                            <div class="map-node" style="position: absolute; bottom: 20%; left: 30%; width: 140px; height: 140px; background: rgba(236, 72, 153, 0.15); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(236, 72, 153, 0.2);" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'; this.style.background='rgba(236, 72, 153, 0.3)'" onmouseout="this.style.transform='scale(1) rotate(0)'; this.style.background='rgba(236, 72, 153, 0.15)'">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 2.2rem;">📚</div>
-                                    <div style="font-weight: 700; font-size: 0.9rem;">Modern Library</div>
+                            <div class="map-node" style="position: absolute; bottom: 20%; left: 30%; width: 140px; height: 140px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-07-at-22.49.57.jpeg') center/cover; border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1) rotate(0)'; this.style.borderColor='var(--secondary)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 0.9rem;">Library</div>
                                 </div>
                             </div>
                             <!-- Science Labs -->
-                            <div class="map-node" style="position: absolute; top: 15%; right: 20%; width: 160px; height: 160px; background: rgba(16, 185, 129, 0.15); border: 2px solid var(--success); border-radius: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='scale(1.1) translateY(-5px)'; this.style.background='rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.background='rgba(16, 185, 129, 0.15)'">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 2.5rem;">🧪</div>
-                                    <div style="font-weight: 700; font-size: 0.9rem;">Innovation Labs</div>
+                            <div class="map-node" style="position: absolute; top: 15%; right: 20%; width: 160px; height: 160px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/IMG_20231212_102352-1024x768.jpg') center/cover; border: 2px solid var(--success); border-radius: 20px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='scale(1.1) translateY(-5px)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.borderColor='var(--success)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 0.95rem;">Innovation Labs</div>
                                 </div>
                             </div>
-                            <!-- Sports Area -->
-                            <div class="map-node" style="position: absolute; bottom: 15%; right: 10%; width: 300px; height: 150px; background: rgba(6, 182, 212, 0.15); border: 2px solid var(--accent); border-radius: 75px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(6, 182, 212, 0.2);" onmouseover="this.style.transform='scale(1.05)'; this.style.background='rgba(6, 182, 212, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(6, 182, 212, 0.15)'">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 2.5rem;">⚽</div>
-                                    <div style="font-weight: 700; font-size: 0.9rem;">Olympic Sports Grounds</div>
+                            <!-- Features / Boarding -->
+                            <div class="map-node" style="position: absolute; bottom: 15%; right: 10%; width: 300px; height: 150px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/boarding.jpg') center/cover; border: 2px solid var(--accent); border-radius: 40px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);" onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='var(--accent)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 1.1rem;">Campus Facilities</div>
                                 </div>
                             </div>
-                            <div style="position: absolute; top: 2rem; left: 2rem; background: var(--bg-main); padding: 0.75rem 1.5rem; border-radius: 100px; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--glass-border); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">🛸 DRONE'S EYE VIEW</div>
+                            <div style="position: absolute; top: 2rem; left: 2rem; background: rgba(0,0,0,0.7); color: white; padding: 0.75rem 1.5rem; border-radius: 100px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">🛸 DRONE'S EYE VIEW</div>
                         </div>
                     </div>
 
