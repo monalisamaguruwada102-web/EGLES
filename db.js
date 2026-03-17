@@ -94,6 +94,14 @@ class QueryBuilder {
 class TableProxy {
     constructor(tableName) {
         this.tableName = tableName;
+        this.cache = null;
+        this.lastFetch = 0;
+        this.CACHE_TTL = 3000; // 3 seconds cache
+    }
+
+    clearCache() {
+        this.cache = null;
+        this.lastFetch = 0;
     }
 
     where(key) {
@@ -101,8 +109,15 @@ class TableProxy {
     }
 
     async toArray() {
+        const now = Date.now();
+        if (this.cache && (now - this.lastFetch < this.CACHE_TTL)) {
+            return this.cache;
+        }
+
         const results = await new QueryBuilder(this.tableName).toArray();
-        return results.map(row => this.normalize(row));
+        this.cache = results.map(row => this.normalize(row));
+        this.lastFetch = now;
+        return this.cache;
     }
 
     normalize(row) {
@@ -127,6 +142,12 @@ class TableProxy {
     }
 
     async get(id) {
+        // First try to find in cache
+        if (this.cache) {
+            const found = this.cache.find(item => item.id == id);
+            if (found) return found;
+        }
+
         const res = await fetch(`${API_URL}/${this.tableName}/${id}`);
         if (!res.ok) return undefined;
         const row = await res.json();
@@ -134,6 +155,7 @@ class TableProxy {
     }
 
     async add(data) {
+        this.clearCache();
         const res = await fetch(`${API_URL}/${this.tableName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -143,6 +165,7 @@ class TableProxy {
     }
 
     async put(data) {
+        this.clearCache();
         if (!data.id) return this.add(data);
         const res = await fetch(`${API_URL}/${this.tableName}/${data.id}`, {
             method: 'PUT',
@@ -159,6 +182,7 @@ class TableProxy {
     }
 
     async delete(id) {
+        this.clearCache();
         await fetch(`${API_URL}/${this.tableName}/${id}`, { method: 'DELETE' });
     }
 

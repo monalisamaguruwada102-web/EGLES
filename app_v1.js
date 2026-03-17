@@ -68,8 +68,7 @@ const app = {
             }
             this.renderSidebar();
             this.updateHeaderUser();
-            await this.showLoading(800);
-            this.renderDashboard();
+            this.renderDashboard(); // No await needed for aesthetic feel
             await this.checkSystemAlerts();
             await this.updateNotifBadge();
             this.hideLoading();
@@ -508,7 +507,7 @@ const app = {
             const users = await db.users.toArray();
             const user = users.find(u => u.username === username && u.password === password);
             
-            await new Promise(r => setTimeout(r, 600)); // Aesthetic delay
+            // Aesthetic delay removed for performance
 
             if (user && ['Admin', 'Teacher', 'Staff', 'Bursar'].includes(user.role)) {
                 localStorage.setItem('egles_session', JSON.stringify(user));
@@ -536,7 +535,7 @@ const app = {
             const students = await db.students.toArray();
             const student = students.find(s => s.studentId.toLowerCase() === studentId.toLowerCase() && s.name.toLowerCase() === name);
             
-            await new Promise(r => setTimeout(r, 600)); // Aesthetic delay
+            // Security check point
 
             if (student) {
                 const session = { 
@@ -2113,10 +2112,10 @@ const app = {
             <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
                 <div>
                     <h1>Academic Insights</h1>
-                    <p>Welcome back, Administrator. Real-time metrics are active.</p>
+                    <p>Welcome back, ${this.currentUser.role}. Real-time metrics are active.</p>
                 </div>
                 <div class="button-group" style="display: flex; gap: 1rem;">
-                    <button class="btn-primary" onclick="app.exportAllData()" style="background: var(--success);">Full System Backup</button>
+                    ${this.currentUser.role === 'Admin' ? `<button class="btn-primary" onclick="app.exportAllData()" style="background: var(--success);">Full System Backup</button>` : ''}
                     <button class="btn-primary" onclick="app.generateMinistryStats()" style="background: var(--secondary); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);">
                         Ministry Statistics
                     </button>
@@ -2138,6 +2137,7 @@ const app = {
                         <p style="font-size: 1.75rem; color: var(--accent); font-weight: 800;">${staffCount}</p>
                     </div>
                 </div>
+                ${this.currentUser.role !== 'Teacher' ? `
                 <div class="glass-panel" style="padding: 1.5rem; display: flex; align-items: center; gap: 1.5rem;">
                     <div style="width: 60px; height: 60px; border-radius: 15px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💰</div>
                     <div>
@@ -2145,15 +2145,18 @@ const app = {
                         <p style="font-size: 1.75rem; color: var(--success); font-weight: 800;">$${sumFees.toLocaleString()}</p>
                     </div>
                 </div>
+                ` : ''}
             </div>
 
-            <div class="dashboard-main-grid">
+            <div class="dashboard-main-grid" style="grid-template-columns: ${this.currentUser.role === 'Teacher' ? '1fr' : '2fr 1fr'}">
+                ${this.currentUser.role !== 'Teacher' ? `
                 <div class="glass-panel">
                     <h2 class="card-title">Financial Trends</h2>
                     <div class="chart-container">
                         <canvas id="financeChart"></canvas>
                     </div>
                 </div>
+                ` : ''}
                 <div class="glass-panel">
                     <h2 class="card-title">Academic Distribution</h2>
                     <div class="chart-container">
@@ -2165,11 +2168,14 @@ const app = {
             <div class="glass-panel" style="margin-top: 1.5rem;">
                 <h2 class="card-title">Quick Actions</h2>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button class="btn-primary" onclick="app.navigate('students')">Admit Student</button>
+                    ${this.currentUser.role === 'Admin' ? `
+                        <button class="btn-primary" onclick="app.navigate('students')">Admit Student</button>
+                        <button class="btn-primary" style="background: var(--accent);" onclick="app.navigate('staff')">Staff Directory</button>
+                        <button class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="app.navigate('fees')">Billing</button>
+                        <button class="btn-primary" style="background: var(--success);" onclick="app.exportAllData()">System Backup</button>
+                    ` : ''}
                     <button class="btn-primary" style="background: var(--secondary);" onclick="app.navigate('exams')">Record Marks</button>
-                    <button class="btn-primary" style="background: var(--accent);" onclick="app.navigate('staff')">Staff Directory</button>
-                    <button class="btn-primary" style="background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border); box-shadow: none;" onclick="app.navigate('fees')">Billing</button>
-                    <button class="btn-primary" style="background: var(--success);" onclick="app.exportAllData()">System Backup</button>
+                    <button class="btn-primary" onclick="app.navigate('notices')">Notice Board</button>
                 </div>
             </div>
         `;
@@ -2673,23 +2679,22 @@ const app = {
     async renderStaff() {
         const staff = await db.staff.toArray();
         this.container.innerHTML = `
-            <div class="glass-panel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                    <h2>Staff Management</h2>
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn-primary" onclick="app.showProvisionModal()">Provision New Staff</button>
-                        <button class="btn-primary" style="background: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);" onclick="app.exportToCSV('staff')">Export Staff (CSV)</button>
-                    </div>
+            <div class="admin-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>Staff Management</h1>
+                <div class="button-group" style="display: flex; gap: 1rem;">
+                    <button class="btn-primary" onclick="app.showProvisionModal()">Provision New Staff</button>
+                    <button class="btn-primary" style="background: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);" onclick="app.exportToCSV('staff')">Export Staff (CSV)</button>
                 </div>
-                
-                <div class="dashboard-grid">
+            </div>
+            
+            <div class="dashboard-grid">
                     <div class="glass-panel" style="background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary);">
                         <div style="font-size: 0.8rem; color: var(--text-muted);">Total Staff</div>
                         <div style="font-size: 2rem; font-weight: 700;">${staff.length}</div>
                     </div>
                 </div>
 
-                <div class="glass-panel" style="margin-top: 2rem; padding: 0; overflow: hidden;">
+                <div class="glass-panel" style="margin-top: 2rem; padding: 0; overflow-x: auto;">
                     <table>
                         <thead>
                             <tr>
