@@ -533,7 +533,11 @@ const app = {
             const studentId = document.getElementById('stu-id').value.trim();
             const name = document.getElementById('stu-name').value.trim().toLowerCase();
             const students = await db.students.toArray();
-            const student = students.find(s => s.studentId.toLowerCase() === studentId.toLowerCase() && s.name.toLowerCase() === name);
+            const student = students.find(s => {
+                const sId = (s.studentId || s.studentid || "").toString().toLowerCase();
+                const sName = (s.name || "").toString().toLowerCase();
+                return sId === studentId.toLowerCase() && sName === name;
+            });
             
             // Security check point
 
