@@ -2472,7 +2472,8 @@ const app = {
             const students = await db.students.toArray();
             let fixesApplied = 0;
             for (const s of students) {
-                if (!s.studentId) {
+                // Check if ID is truly missing or is the corrupted string "undefined"
+                if (!s.studentId || s.studentId === "undefined" || s.studentId === "null") {
                     const ts = Date.now().toString().slice(-4);
                     const newId = `EST26${String(s.id).padStart(3, '0')}${ts}`;
                     await db.students.update(s.id, { studentId: newId });
@@ -2481,7 +2482,7 @@ const app = {
             }
             const staff = await db.staff.toArray();
             for (const s of staff) {
-                if (!s.staffId) {
+                if (!s.staffId || s.staffId === "undefined" || s.staffId === "null") {
                     const prefix = s.role === 'Admin' ? 'ADM' : 'TCH';
                     const newId = `${prefix}-${26}${String(s.id).padStart(3, '0')}`;
                     await db.staff.update(s.id, { staffId: newId });

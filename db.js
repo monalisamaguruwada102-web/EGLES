@@ -107,13 +107,22 @@ class TableProxy {
 
     normalize(row) {
         if (!row) return row;
-        // Handle PostgreSQL lowercase column names
-        if (row.studentid && !row.studentId) row.studentId = row.studentid;
-        if (row.staffid && !row.staffId) row.staffId = row.staffid;
-        if (row.teacherid && !row.teacherId) row.teacherId = row.teacherid;
-        if (row.hostelid && !row.hostelId) row.hostelId = row.hostelid;
-        if (row.routeid && !row.routeId) row.routeId = row.routeid;
-        if (row.parentcontact && !row.parentContact) row.parentContact = row.parentcontact;
+        
+        // Scrub corruption where literal "undefined" strings might exist
+        for (let key in row) {
+            if (row[key] === "undefined" || row[key] === "null") {
+                row[key] = null;
+            }
+        }
+
+        // Handle PostgreSQL lowercase column names (Reverse Mapping)
+        if (row.studentid !== undefined && row.studentId === undefined) row.studentId = row.studentid;
+        if (row.staffid !== undefined && row.staffId === undefined) row.staffId = row.staffid;
+        if (row.teacherid !== undefined && row.teacherId === undefined) row.teacherId = row.teacherid;
+        if (row.hostelid !== undefined && row.hostelId === undefined) row.hostelId = row.hostelid;
+        if (row.routeid !== undefined && row.routeId === undefined) row.routeId = row.routeid;
+        if (row.parentcontact !== undefined && row.parentContact === undefined) row.parentContact = row.parentcontact;
+        
         return row;
     }
 
