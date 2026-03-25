@@ -115,197 +115,126 @@ const app = {
         this.container.innerHTML = `
             <div id="public-portal" style="min-height:100vh; background: var(--bg-main); width:100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 
-                <!-- Live News Ticker -->
-                <div class="stats-ticker">
-                    <div class="stats-ticker-content">
-                        <div class="ticker-item"><div class="ticker-dot"></div> Admissions for 2026 now open</div>
-                        <div class="ticker-item"><div class="ticker-dot"></div> 98% O-Level Pass Rate recorded</div>
-                        <div class="ticker-item"><div class="ticker-dot"></div> New Innovation Hub launching soon</div>
-                        <div class="ticker-item"><div class="ticker-dot"></div> Regional Sports Championships next month</div>
-                        <div class="ticker-item"><div class="ticker-dot"></div> Admissions for 2026 now open</div>
-                    </div>
-                </div>
-
                 <!-- Premium Hero Section -->
-                <div style="background: linear-gradient(135deg, rgba(2, 6, 23, 0.92) 0%, rgba(99,102,241,0.5) 100%), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-07-at-22.50.00-1.jpeg') center/cover no-repeat; padding: 10rem 1rem 8rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border); text-align:center;">
-                    <div style="max-width:1400px; margin:0 auto; position:relative; z-index:10; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4rem;">
+                <div style="background: linear-gradient(135deg, rgba(2, 6, 23, 0.85) 0%, rgba(99,102,241,0.65) 100%), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-07-at-22.50.00-1.jpeg') center/cover no-repeat; padding: 6rem 1rem; position:relative; overflow:hidden; border-bottom:1px solid var(--glass-border); text-align:center;">
+                    <div style="max-width:1200px; margin:0 auto; position:relative; z-index:10;">
+                        <div style="display:inline-block; padding:0.4rem 1.2rem; background:var(--primary-glow); color:var(--primary-bright); border-radius:100px; font-size:0.8rem; font-weight:700; margin-bottom:1.5rem; letter-spacing:2px; text-transform:uppercase; border: 1px solid var(--primary-glow);">Official Gateway</div>
+                        <h1 style="font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight:900; letter-spacing:-2px; line-height:1.1; margin-bottom:1.5rem; background:linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">EGLES <span style="color:var(--primary-bright); -webkit-text-fill-color:var(--primary-bright);">SMIS</span></h1>
+                        <p style="color:#e2e8f0; font-size:1.25rem; max-width:700px; margin:0 auto 3rem; line-height:1.7;">A state-of-the-art management system for the leaders of tomorrow. Seamlessly connecting students, staff, and parents in a secure digital ecosystem.</p>
                         
-                        <div style="flex: 1; text-align: left; min-width: 320px;">
-                            <div style="display:inline-block; padding:0.4rem 1.2rem; background:var(--primary-glow); color:var(--primary-bright); border-radius:100px; font-size:0.8rem; font-weight:700; margin-bottom:1.5rem; letter-spacing:2px; text-transform:uppercase; border: 1px solid var(--primary-glow);">Official Gateway</div>
-                            <h1 style="font-size: clamp(3rem, 10vw, 5.5rem); font-weight:900; letter-spacing:-3px; line-height:0.9; margin-bottom:1.5rem; background:linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">EGLES <span style="color:var(--primary-bright); -webkit-text-fill-color:var(--primary-bright);">SMIS</span></h1>
-                            <p style="color:#e2e8f0; font-size:1.4rem; max-width:600px; margin:0 0 3rem; line-height:1.6; opacity: 0.9;">Redefining educational excellence through technology. A secure, premium digital ecosystem for the modern academic world.</p>
-                            
-                            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-weight: 600;">
-                                    <span style="font-size: 1.5rem; color: var(--success);">✓</span> Verified Secure
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-weight: 600;">
-                                    <span style="font-size: 1.5rem; color: var(--success);">✓</span> PWA Enabled
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Glassmorphic Login Card -->
-                        <div class="hero-auth-card">
-                            <div class="glass-tabs">
-                                <button class="glass-tab active" id="tab-student" onclick="app.setAuthTab('student')">Student Portal</button>
-                                <button class="glass-tab" id="tab-staff" onclick="app.setAuthTab('staff')">Staff Login</button>
-                            </div>
-
-                            <div id="auth-form-container">
-                                <div style="text-align: left; margin-bottom: 2rem;">
-                                    <h2 style="margin: 0; font-size: 1.8rem;">Welcome back</h2>
-                                    <p style="margin: 0; font-size: 0.9rem;">Please enter your credentials to continue</p>
-                                </div>
-                                
-                                <form onsubmit="app.handleAuthSubmit(event)">
-                                    <div id="dynamic-auth-fields">
-                                        <input type="text" id="auth-input-id" placeholder="Student ID (STU-XXXXX)" required>
-                                        <input type="text" id="auth-input-name" placeholder="Full Name" required>
-                                    </div>
-                                    <button type="submit" class="btn-primary" id="auth-submit-btn" style="width:100%; height: 55px; font-size: 1.1rem; border-radius: 18px; margin-top: 1rem;">Initialize Session</button>
-                                </form>
-                                <div style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-muted);">
-                                    By signing in, you agree to Egles Academic Privacy Policy.
-                                </div>
-                            </div>
+                        <div style="display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center;">
+                            <button onclick="app.showStudentLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; box-shadow:0 15px 40px var(--primary-glow); border-radius:15px; border:none; background:var(--primary); color:white; cursor:pointer; display:flex; align-items:center; gap:0.5rem;">
+                                🎓 Student Portal
+                            </button>
+                            <button onclick="app.showStaffLogin()" class="btn-primary" style="font-size:1.1rem; padding:1rem 2.5rem; background:rgba(255,255,255,0.1); color:white; box-shadow:none; border:1px solid rgba(255,255,255,0.2); border-radius:15px; cursor:pointer; display:flex; align-items:center; gap:0.5rem; backdrop-filter: blur(10px);">
+                                🔐 Staff Login
+                            </button>
                         </div>
                     </div>
-
-                    <!-- Decorative Background elements -->
-                    <div style="position: absolute; top: 10%; right: 10%; width: 300px; height: 300px; background: var(--primary); opacity: 0.15; filter: blur(100px); border-radius: 50%;"></div>
-                    <div style="position: absolute; bottom: 10%; left: 10%; width: 250px; height: 250px; background: var(--secondary); opacity: 0.1; filter: blur(80px); border-radius: 50%;"></div>
                 </div>
 
                 <!-- Main Content -->
-                <div style="max-width:1400px; margin:0 auto; padding:6rem 1rem;">
+                <div style="max-width:1400px; margin:0 auto; padding:4rem 1rem;">
                     
                     <!-- Admissions Countdown -->
                     <div id="pub-countdown-container"></div>
 
-                    <!-- Campus Explorer -->
-                    <div style="margin-bottom: 8rem;">
-                        <h2 style="font-size: 3rem; margin-bottom: 1rem; text-align: center; font-weight: 900; letter-spacing: -1px;">📍 Campus Explorer</h2>
-                        <p style="text-align: center; color: var(--text-muted); margin-bottom: 4rem; font-size: 1.1rem;">Take a virtual tour of our world-class facilities</p>
-                        
-                        <div style="position: relative; width: 100%; height: 600px; background: #020617; border-radius: 40px; border: 1px solid var(--glass-border); overflow: hidden; box-shadow: var(--shadow-lg);">
-                            <div style="position: absolute; inset: 0; background-image: radial-gradient(var(--glass-border) 1.5px, transparent 1.5px); background-size: 40px 40px; opacity: 0.3;"></div>
-                            <!-- Map nodes remain similar but with updated styling -->
-                            <div class="map-node" style="position: absolute; top: 20%; left: 15%; width: 220px; height: 160px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/OIP-2.jpeg') center/cover; border: 2px solid var(--primary); border-radius: 25px; display: flex; align-items: flex-end; justify-content: center; padding: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);" onmouseover="this.style.transform='scale(1.1) translateY(-20px)'; this.style.borderColor='var(--primary-bright)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.borderColor='var(--primary)'">
-                                <div style="color: white; text-align: center;">
-                                    <div style="font-weight: 900; font-size: 1.1rem;">Academic HQ</div>
-                                </div>
-                            </div>
-                            <div class="map-node" style="position: absolute; bottom: 25%; left: 35%; width: 180px; height: 180px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-07-at-22.49.57.jpeg') center/cover; border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: flex-end; justify-content: center; padding: 30px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 15px 40px rgba(236, 72, 153, 0.4);" onmouseover="this.style.transform='scale(1.1) rotate(10deg)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1) rotate(0)'; this.style.borderColor='var(--secondary)'">
-                                <div style="color: white; text-align: center;">Library</div>
-                            </div>
-                            <div style="position: absolute; top: 3rem; left: 3rem; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); padding: 1rem 2rem; border-radius:100px; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:1rem;">
-                                <div style="width:10px; height:10px; background:var(--danger); border-radius:50%; animation: pulse 1.5s infinite;"></div>
-                                <span style="font-weight:800; font-size:0.8rem; letter-spacing:2px; color:white;">LIVE OVERVIEW</span>
-                            </div>
+                    <!-- Hall of Fame -->
+                    <div style="margin-bottom: 6rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; text-align: center; font-weight: 800;">🏆 Wall of Excellence</h2>
+                        <div id="pub-excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
 
-                    <!-- Hall of Fame -->
-                    <div style="margin-bottom: 8rem;">
-                        <h2 style="font-size: 3rem; margin-bottom: 4rem; text-align: center; font-weight: 900; letter-spacing: -1px;">🏆 Wall of Excellence</h2>
-                        <div id="pub-excellence-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2.5rem;"></div>
+                    <!-- Interactive Map -->
+                    <div style="margin-bottom: 6rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 2rem; text-align: center; font-weight: 800;">📍 Campus Explorer</h2>
+                        <div style="position: relative; width: 100%; height: 500px; background: var(--bg-card); border-radius: 30px; border: 1px solid var(--glass-border); overflow: hidden; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(var(--glass-border) 1.5px, transparent 1.5px); background-size: 30px 30px;">
+                            <!-- Main Academic Block -->
+                            <div class="map-node" style="position: absolute; top: 25%; left: 15%; width: 180px; height: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/OIP-2.jpeg') center/cover; border: 2px solid var(--primary); border-radius: 20px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 15px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);" onmouseover="this.style.transform='scale(1.1) translateY(-10px)'; this.style.borderColor='var(--primary-bright)'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.borderColor='var(--primary)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px;">Academic HQ</div>
+                                </div>
+                            </div>
+                            <!-- Library -->
+                            <div class="map-node" style="position: absolute; bottom: 20%; left: 30%; width: 140px; height: 140px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-07-at-22.49.57.jpeg') center/cover; border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1) rotate(0)'; this.style.borderColor='var(--secondary)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 0.9rem;">Library</div>
+                                </div>
+                            </div>
+                            <!-- Science Labs -->
+                            <div class="map-node" style="position: absolute; top: 15%; right: 20%; width: 160px; height: 160px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/IMG_20231212_102352-1024x768.jpg') center/cover; border: 2px solid var(--success); border-radius: 20px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='scale(1.1) translateY(-5px)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.borderColor='var(--success)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 0.95rem;">Innovation Labs</div>
+                                </div>
+                            </div>
+                            <!-- Features / Boarding -->
+                            <div class="map-node" style="position: absolute; bottom: 15%; right: 10%; width: 300px; height: 150px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent), url('https://eaglescollege.co.zw/wp-content/uploads/2025/07/boarding.jpg') center/cover; border: 2px solid var(--accent); border-radius: 40px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);" onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='white'" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='var(--accent)'">
+                                <div style="text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                                    <div style="font-weight: 800; font-size: 1.1rem;">Campus Facilities</div>
+                                </div>
+                            </div>
+                            <div style="position: absolute; top: 2rem; left: 2rem; background: rgba(0,0,0,0.7); color: white; padding: 0.75rem 1.5rem; border-radius: 100px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">🛸 DRONE'S EYE VIEW</div>
+                        </div>
                     </div>
 
                     <!-- Live Stats -->
-                    <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:2.5rem; margin-bottom:10rem;"></div>
+                    <div id="public-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:2rem; margin-bottom:6rem;">
+                        <!-- Populate dynamically -->
+                    </div>
 
                     <!-- Curriculum & Pathways -->
-                    <div style="margin-bottom: 8rem;">
-                        <h2 style="font-size: 3rem; margin-bottom: 4rem; text-align: center; font-weight: 900; letter-spacing: -1px;">🚀 Academic Pathways</h2>
-                        <div id="pub-curriculum-explorer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2.5rem;"></div>
+                    <div style="margin-bottom: 6rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 3rem; text-align: center; font-weight: 800;">🚀 Academic Pathways</h2>
+                        <div id="pub-curriculum-explorer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+                            <!-- Populated dynamically -->
+                        </div>
                     </div>
 
-                    <!-- Split Section -->
-                    <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap: 5rem;" class="mobile-stack">
+                    <!-- Notices & Timetable Split -->
+                    <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap: 4rem;" class="mobile-stack">
                         <div>
-                            <h2 style="font-size: 2.5rem; margin-bottom: 2.5rem; font-weight: 900;">📢 Announcements</h2>
-                            <div id="pub-notices-list" style="display:flex; flex-direction:column; gap:2rem;"></div>
+                            <h2 style="font-size: 2rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">📢 Announcements</h2>
+                            <div id="pub-notices-list" style="display:flex; flex-direction:column; gap:1.5rem;"></div>
                         </div>
                         <div>
-                            <h2 style="font-size: 2.5rem; margin-bottom: 2.5rem; font-weight: 900;">📅 Class Schedules</h2>
-                            <div id="pub-timetable" class="glass-panel" style="margin:0; padding:2rem; border-radius: 35px;"></div>
+                            <h2 style="font-size: 2rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">📅 Class Schedules</h2>
+                            <div class="glass-panel" style="margin:0; padding:1.5rem; overflow-x:auto; border-radius: 25px;">
+                                <div id="pub-timetable"></div>
+                            </div>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- Floating Quick Action Bar -->
-                <div class="quick-action-bar">
-                    <div class="quick-action-item" onclick="app.setAuthTab('student')">
-                        <div class="quick-action-icon">🎓</div><span>Portal</span>
-                    </div>
-                    <div class="quick-action-item" onclick="document.getElementById('pub-timetable').scrollIntoView({behavior:'smooth'})">
-                        <div class="quick-action-icon">📅</div><span>Schedules</span>
-                    </div>
-                    <div class="quick-action-item" onclick="app.setAuthTab('staff')">
-                        <div class="quick-action-icon">🔐</div><span>Staff</span>
-                    </div>
-                    <div class="quick-action-item" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-                        <div class="quick-action-icon">🔼</div><span>Top</span>
-                    </div>
-                </div>
-
-                <!-- Testimonial -->
+                <!-- Footer/Testimonial -->
                 <div id="pub-testimonial-container"></div>
                 
-                <footer style="padding: 6rem 2rem; text-align: center; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);">
-                    <div class="logo" style="font-size: 2.5rem; margin-bottom: 1.5rem;">EGLES <span>SMIS</span></div>
-                    <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">© 2026 Egles Secondary School. Empowering tomorrow's leaders.</p>
+                <footer style="padding: 4rem 2rem; text-align: center; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.2);">
+                    <div class="logo" style="font-size: 2rem; margin-bottom: 1rem;">EGLES <span>SMIS</span></div>
+                    <p style="color: var(--text-muted);">© 2026 Egles Secondary School. All academic rights reserved.</p>
                 </footer>
             </div>
+
+            <style>
+                #public-portal {
+                    overflow-x: hidden;
+                    position: relative;
+                }
+                .main-wrapper {
+                    margin-left: 0 !important;
+                    width: 100% !important;
+                    padding: 0 !important;
+                    max-width: 100% !important;
+                }
+                @media (max-width: 1000px) {
+                    .mobile-stack { grid-template-columns: 1fr !important; gap: 3rem !important; }
+                    #public-portal { width: 100% !important; margin-left: 0 !important; }
+                }
+            </style>
         `;
         this._loadPublicData();
-        this.currentAuthTab = 'student';
-    },
-
-    setAuthTab(tab) {
-        this.currentAuthTab = tab;
-        const studentTab = document.getElementById('tab-student');
-        const staffTab = document.getElementById('tab-staff');
-        const fields = document.getElementById('dynamic-auth-fields');
-        const btn = document.getElementById('auth-submit-btn');
-
-        if (tab === 'student') {
-            studentTab.classList.add('active');
-            staffTab.classList.remove('active');
-            fields.innerHTML = `
-                <input type="text" id="auth-input-id" placeholder="Student ID (STU-XXXXX)" required>
-                <input type="text" id="auth-input-name" placeholder="Full Name" required>
-            `;
-            btn.innerText = 'Initialize Student Session';
-        } else {
-            staffTab.classList.add('active');
-            studentTab.classList.remove('active');
-            fields.innerHTML = `
-                <input type="text" id="auth-input-id" placeholder="Username" required autocomplete="username">
-                <input type="password" id="auth-input-name" placeholder="Password" required autocomplete="current-password">
-            `;
-            btn.innerText = 'Authenticate Staff Member';
-        }
-    },
-
-    async handleAuthSubmit(e) {
-        e.preventDefault();
-        const id = document.getElementById('auth-input-id').value.trim();
-        const extra = document.getElementById('auth-input-name').value.trim();
-
-        if (this.currentAuthTab === 'student') {
-            // Simulate student login (could reuse existing logic)
-            document.getElementById('stu-id').value = id;
-            document.getElementById('stu-name').value = extra;
-            this.handleStudentLogin(e);
-        } else {
-            // Simulate staff login
-            document.getElementById('auth-user').value = id;
-            document.getElementById('auth-pass').value = extra;
-            this.handleStaffAuth(e);
-        }
     },
 
     async _loadPublicData() {
@@ -625,6 +554,8 @@ const app = {
         }
     },
 
+
+
     async renderStudentPortal() {
         const student = await db.students.get(this.currentUser.id);
         if (!student) return alert("Student profile error.");
@@ -633,182 +564,133 @@ const app = {
         const attendance = await db.attendance.where('studentId').equals(student.studentId).toArray();
         const payments = await db.fees.where('studentId').equals(student.studentId).toArray();
         const notices = await db.notices.toArray();
-        const timetable = await db.timetable.where('class').equals(student.class).limit(5).toArray();
 
         // Calculate attendance stats
         const attTotal = attendance.length;
         const attPresent = attendance.filter(a => a.status === 'Present').length;
         const attPercent = attTotal > 0 ? Math.round((attPresent / attTotal) * 100) : 100;
 
-        // Calculate GPA or Average
-        const avgScore = marks.length > 0 ? Math.round(marks.reduce((acc, m) => acc + m.score, 0) / marks.length) : 0;
-        const dashOffset = 226.2 - (226.2 * avgScore / 100);
-
-        // Get Greeting
-        const hour = new Date().getHours();
-        const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-
         this.container.innerHTML = `
             <div id="student-portal" style="min-height: 100vh; background: var(--bg-main); width: 100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
-                <div style="max-width:1400px; margin:0 auto; padding:3rem 1rem;">
+                <div style="max-width:1400px; margin:0 auto; padding:2rem 1rem;">
                     
                     <!-- PREMIUM IDENTITY HEADER -->
-                    <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.12)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 4rem; display: flex; flex-wrap: wrap; border-radius: 40px; box-shadow: var(--shadow-lg);">
-                        <div style="flex: 1; min-width: 320px; padding: 4rem; display: flex; gap: 3rem; align-items: center;">
+                    <div class="glass-panel" style="background: linear-gradient(135deg, var(--bg-card), rgba(99,102,241,0.08)); border: 1px solid var(--glass-border); padding: 0; overflow: hidden; margin-bottom: 3rem; display: flex; flex-wrap: wrap; border-radius: 30px; box-shadow: var(--shadow-lg);">
+                        <div style="flex: 1; min-width: 300px; padding: 3rem; display: flex; gap: 2.5rem; align-items: center;">
                             <div style="position: relative;">
-                                <div style="width: 140px; height: 140px; border-radius: 35px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; box-shadow: 0 25px 50px var(--primary-glow); border: 6px solid var(--bg-card);">
+                                <div style="width: 120px; height: 120px; border-radius: 30px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 900; box-shadow: 0 20px 40px var(--primary-glow); border: 5px solid var(--bg-card);">
                                     ${student.name.charAt(0).toUpperCase()}
                                 </div>
-                                <div style="position: absolute; bottom: -10px; right: -10px; width: 45px; height: 45px; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: var(--shadow);">💎</div>
+                                <div style="position: absolute; bottom: 0; right: 0; width: 34px; height: 34px; background: var(--success); border-radius: 50%; border: 4px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 1rem;">✨</div>
                             </div>
                             <div>
-                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                                    <div class="profile-badge">🏅 Academic Elite</div>
-                                    <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                                        <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div> Online
-                                    </span>
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <span style="background: var(--success-glow); color: var(--success); padding: 4px 12px; border-radius: 100px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">Active</span>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">System verified</span>
                                 </div>
-                                <h1 style="margin: 0; font-size: 3.5rem; font-weight: 950; letter-spacing: -2px; background: linear-gradient(to bottom, #ffffff 40%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${greeting}, ${student.name.split(' ')[0]}</h1>
-                                <div style="display: flex; gap: 2.5rem; margin-top: 1.5rem; color: var(--text-muted); font-size: 1.1rem;">
-                                    <span><strong>ID:</strong> <span style="color:var(--primary-bright); font-family: monospace; font-weight: 800;">${student.studentId}</span></span>
-                                    <span><strong>FORM:</strong> <span style="color:white; font-weight: 800;">${student.class}</span></span>
-                                    <span><strong>STATUS:</strong> <span style="color:var(--success); font-weight: 800;">Fully Paid</span></span>
+                                <h1 style="margin: 0; font-size: 2.8rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(to bottom, #ffffff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${student.name}</h1>
+                                <div style="display: flex; gap: 2rem; margin-top: 0.75rem; color: var(--text-muted); font-size: 1rem;">
+                                    <span><strong>ID:</strong> <span style="color:var(--primary-bright); font-family: monospace;">${student.studentId}</span></span>
+                                    <span><strong>CLASS:</strong> <span style="color:white; font-weight: 700;">${student.class}</span></span>
                                 </div>
                             </div>
                         </div>
-                        <div style="width: 350px; background: rgba(0,0,0,0.4); border-left: 1px solid var(--glass-border); padding: 4rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2rem;">
-                            
-                            <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
-                                <div class="progress-ring">
-                                    <svg width="80" height="80">
-                                        <circle class="progress-ring-bg" cx="40" cy="40" r="36"></circle>
-                                        <circle class="progress-ring-fill" cx="40" cy="40" r="36" style="stroke-dasharray: 226.2; stroke-dashoffset: ${dashOffset};"></circle>
-                                    </svg>
-                                    <div class="progress-ring-text">${avgScore}%</div>
-                                </div>
-                                <div style="text-align: left;">
-                                    <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px;">Overall Performance</div>
-                                    <div style="font-size: 1.25rem; font-weight: 800; color: white;">Grade: ${this.calculateGrade(avgScore)}</div>
-                                </div>
+                        <div style="width: 280px; background: rgba(0,0,0,0.3); border-left: 1px solid var(--glass-border); padding: 2.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <button onclick="app.logout()" class="btn-primary" style="width: 100%; margin-bottom: 1.5rem; background: var(--danger);">Secure Logout</button>
+                            <div style="width: 100px; height: 100px; background: white; padding: 10px; border-radius: 15px;">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${student.studentId}" style="width: 100%;">
                             </div>
-
-                            <button onclick="app.logout()" class="btn-primary" style="width: 100%; height: 50px; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); box-shadow: none;">Sign Out Safely</button>
                         </div>
                     </div>
 
-                    <div class="dashboard-grid mobile-stack" style="grid-template-columns: 2fr 1fr; gap: 3rem;">
+                    <div class="dashboard-grid mobile-stack" style="grid-template-columns: 2fr 1fr; gap: 2rem;">
                         <!-- Left Column: Results & Info -->
-                        <div style="display: flex; flex-direction: column; gap: 3rem;">
+                        <div style="display: flex; flex-direction: column; gap: 2rem;">
                             
-                            <!-- Academic Timeline (Schedule) -->
-                            <div class="glass-panel" style="margin: 0; border-radius: 40px; background: rgba(255,255,255,0.01);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
-                                    <h2 style="margin: 0; font-size: 2rem; font-weight: 900;">Academic Timeline</h2>
-                                    <div style="background: var(--glass-bg); padding: 8px 16px; border-radius: 100px; font-size: 0.8rem; font-weight: 800; color: var(--text);">TODAY: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
-                                </div>
-                                <div class="timeline">
-                                    ${timetable.length === 0 ? '<p style="color:var(--text-muted); padding: 2rem; text-align: center;">No classes scheduled for today.</p>' : timetable.map((s, idx) => `
-                                        <div class="timeline-item ${idx === 0 ? 'active' : ''}">
-                                            <div class="timeline-dot"></div>
-                                            <div class="timeline-content">
-                                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                    <div>
-                                                        <div style="font-size: 0.8rem; color: var(--primary); font-weight: 800; margin-bottom: 4px;">${s.period}</div>
-                                                        <h3 style="margin: 0; font-size: 1.25rem;">${s.subject}</h3>
-                                                    </div>
-                                                    <div style="text-align: right;">
-                                                        <div style="font-size: 0.85rem; color: white; font-weight: 700;">Rm ${Math.floor(Math.random()*20 + 1)}</div>
-                                                        <div style="font-size: 0.7rem; color: var(--text-muted);">Academic Block</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-
                             <!-- Result Overview -->
-                            <div class="glass-panel" style="margin: 0; border-radius: 40px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3.5rem;">
-                                    <h2 style="margin: 0; font-size: 2rem; font-weight: 900;">Mastery Analysis</h2>
-                                    <div style="background: var(--primary-glow); padding: 10px 20px; border-radius: 12px; color: var(--primary-bright); font-weight: 800;">Formative Assessment T1</div>
+                            <div class="glass-panel" style="margin: 0; border-radius: 30px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                                    <h2>Academic Achievement</h2>
+                                    <div style="background: var(--primary-glow); padding: 8px 16px; border-radius: 12px; color: var(--primary-bright); font-weight: 700;">Term 1 Report</div>
                                 </div>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem;">
-                                    ${marks.length === 0 ? '<p>Performance data pending.</p>' : marks.map(m => `
-                                        <div style="background: rgba(255,255,255,0.03); padding: 2rem; border-radius: 25px; border: 1px solid var(--glass-border); position: relative; overflow: hidden;">
-                                            <div style="position: absolute; top: -10px; right: -10px; font-size: 4rem; opacity: 0.05; transform: rotate(15deg);">📊</div>
-                                            <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-weight: 800;">${m.subject}</div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem;">
+                                    ${marks.length === 0 ? '<p>No results posted yet.</p>' : marks.map(m => `
+                                        <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                                            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">${m.subject}</div>
                                             <div style="display: flex; justify-content: space-between; align-items: end;">
-                                                <div style="font-size: 2.8rem; font-weight: 900; color: white; letter-spacing: -1px;">${m.score}%</div>
-                                                <div style="width: 45px; height: 45px; background: var(--bg-main); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary-bright); font-weight: 900; font-size: 1.4rem; border: 1px solid var(--glass-border);">${this.calculateGrade(m.score)}</div>
+                                                <div style="font-size: 2.25rem; font-weight: 800; color: white;">${m.score}%</div>
+                                                <div style="color: var(--primary); font-weight: 900; font-size: 1.2rem; margin-bottom: 0.3rem;">${this.calculateGrade(m.score)}</div>
                                             </div>
-                                            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 20px; margin-top: 1.5rem; overflow: hidden;">
-                                                <div style="width: ${m.score}%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 20px;"></div>
+                                            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-top: 1rem; overflow: hidden;">
+                                                <div style="width: ${m.score}%; height: 100%; background: var(--primary); border-radius: 10px;"></div>
                                             </div>
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
 
+                            <!-- Financial Status -->
+                            <div class="glass-panel" style="margin:0; border-radius: 30px;">
+                                <h2>Finance & Billing</h2>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="text-align: left; opacity: 0.5;">
+                                            <th style="padding: 1rem;">Service/Item</th>
+                                            <th style="padding: 1rem;">Date</th>
+                                            <th style="padding: 1rem;">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${payments.length === 0 ? '<tr><td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-muted);">No payment records found.</td></tr>' : payments.map(p => `
+                                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                                <td style="padding: 1rem; font-weight: 600;">${p.type || 'Tuition Fee'}</td>
+                                                <td style="padding: 1rem; color: var(--text-muted);">${p.date}</td>
+                                                <td style="padding: 1rem; color: var(--success); font-weight: 800;">$${p.amount}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- Right Column: Sidebar Stats -->
-                        <div style="display: flex; flex-direction: column; gap: 3rem;">
+                        <div style="display: flex; flex-direction: column; gap: 2rem;">
                             
-                            <!-- Financial Progress Card -->
-                            <div class="glass-panel" style="margin:0; border-radius: 40px; background: #020617; border-color: rgba(16, 185, 129, 0.2);">
-                                <h3 style="font-size: 1.5rem; margin-bottom: 2rem; font-weight: 900;">Statement of Fees</h3>
-                                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                                    ${payments.length === 0 ? '<p style="color: var(--text-muted);">Clear balance.</p>' : payments.map(p => `
-                                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 18px; border: 1px solid var(--glass-border);">
-                                            <div>
-                                                <div style="font-weight: 800; font-size: 1rem; color: white;">${p.type || 'Academic Fee'}</div>
-                                                <div style="font-size: 0.75rem; color: var(--text-muted);">${p.date}</div>
-                                            </div>
-                                            <div style="color: var(--success); font-weight: 900; font-size: 1.1rem;">+$${p.amount}</div>
+                            <!-- Attendance Card -->
+                            <div class="glass-panel" style="margin: 0; text-align: center; border-radius: 30px; position: relative; overflow: hidden;">
+                                <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.05;">📅</div>
+                                <h3 style="margin-bottom: 1.5rem;">Class Attendance</h3>
+                                <div style="font-size: 4rem; font-weight: 900; color: var(--accent); line-height: 1;">${attPercent}%</div>
+                                <p style="margin-top: 0.5rem; font-weight: 600;">Overall Rating</p>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1.5rem;">Successfully attended ${attPresent} out of ${attTotal} sessions this term.</div>
+                            </div>
+
+                            <!-- Notice Board Card -->
+                            <div class="glass-panel" style="margin: 0; border-radius: 30px;">
+                                <h3 style="margin-bottom: 1.5rem;">Campus Notices</h3>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    ${notices.length === 0 ? '<p style="color: var(--text-muted);">No notices today.</p>' : notices.slice(-3).reverse().map(n => `
+                                        <div style="padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 16px; border-left: 3px solid var(--primary);">
+                                            <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem;">${n.title}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${n.date}</div>
                                         </div>
                                     `).join('')}
                                 </div>
-                                <div style="margin-top: 2rem; padding: 1.5rem; background: var(--success-glow); border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2); text-align: center;">
-                                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--success); font-weight: 800; margin-bottom: 5px;">Outstanding Balance</div>
-                                    <div style="font-size: 2rem; font-weight: 950; color: white;">$0.00</div>
-                                </div>
+                                <button class="btn-primary" style="width: 100%; margin-top: 1.5rem; background: var(--glass-bg); color: var(--text); border: 1px solid var(--glass-border);" onclick="alert('Digital Archives available in Admin Block')">View Archives</button>
                             </div>
-
-                            <!-- Attendance Card -->
-                            <div class="glass-panel" style="margin: 0; text-align: center; border-radius: 40px; position: relative; overflow: hidden;">
-                                <div style="position: absolute; top: -10px; left: -10px; font-size: 8rem; opacity: 0.03; font-weight: 900;">ATT</div>
-                                <h3 style="margin-bottom: 2rem; font-size: 1.4rem; font-weight: 900;">Engagement Score</h3>
-                                <div style="font-size: 5rem; font-weight: 950; color: var(--accent); line-height: 1; letter-spacing: -4px;">${attPercent}%</div>
-                                <div style="margin-top: 1rem; display: inline-block; background: var(--success-glow); color: var(--success); padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800;">EXCELLENT</div>
-                                <p style="margin-top: 2rem; font-size: 0.95rem; line-height: 1.6;">You have missed only <strong>${attTotal - attPresent}</strong> sessions this semester. Keep up the consistency!</p>
-                            </div>
-
                         </div>
 
                     </div>
                 </div>
-
-                <!-- Floating Student Actions -->
-                <div class="quick-action-bar">
-                    <div class="quick-action-item" onclick="alert('Digital Library under maintenance')">
-                        <div class="quick-action-icon">📚</div>
-                        <span>Library</span>
-                    </div>
-                    <div class="quick-action-item" onclick="app.navigate('resources')">
-                        <div class="quick-action-icon">📂</div>
-                        <span>Assets</span>
-                    </div>
-                    <div class="quick-action-item" onclick="alert('Help Ticket submitted')">
-                        <div class="quick-action-icon">🆘</div>
-                        <span>Help</span>
-                    </div>
-                    <div class="quick-action-item" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-                        <div class="quick-action-icon">🔼</div>
-                        <span>Top</span>
-                    </div>
-                </div>
             </div>
+
+            <style>
+                #student-portal { overflow-x: hidden; }
+                @media (max-width: 900px) {
+                    #student-portal { width: 100% !important; margin-left: 0 !important; }
+                    .mobile-stack { grid-template-columns: 1fr !important; }
+                }
+            </style>
         `;
     },
 
@@ -3134,15 +3016,6 @@ const app = {
         this.container.innerHTML = html;
         window.print();
         this.container.innerHTML = oldContent;
-    },
-
-    calculateGrade(score) {
-        if (score >= 80) return 'A';
-        if (score >= 70) return 'B';
-        if (score >= 60) return 'C';
-        if (score >= 50) return 'D';
-        if (score >= 40) return 'E';
-        return 'U';
     }
 };
 
