@@ -297,9 +297,15 @@ const app = {
         const extra = document.getElementById('auth-input-name').value.trim();
 
         if (this.currentAuthTab === 'student') {
-            this.handleStudentLogin(e, id, extra);
+            // Simulate student login (could reuse existing logic)
+            document.getElementById('stu-id').value = id;
+            document.getElementById('stu-name').value = extra;
+            this.handleStudentLogin(e);
         } else {
-            this.handleStaffAuth(e, id, extra);
+            // Simulate staff login
+            document.getElementById('auth-user').value = id;
+            document.getElementById('auth-pass').value = extra;
+            this.handleStaffAuth(e);
         }
     },
 
@@ -557,14 +563,14 @@ const app = {
         `;
     },
 
-    async handleStaffAuth(e, pUser = null, pPass = null) {
+    async handleStaffAuth(e) {
         e.preventDefault();
         const btn = e.target.querySelector('button');
         if (btn) btn.classList.add('loading');
         
         try {
-            const username = pUser !== null ? pUser : document.getElementById('auth-user').value.trim();
-            const password = pPass !== null ? pPass : document.getElementById('auth-pass').value;
+            const username = document.getElementById('auth-user').value.trim();
+            const password = document.getElementById('auth-pass').value;
             const users = await db.users.toArray();
             const user = users.find(u => u.username === username && u.password === password);
             
@@ -585,14 +591,14 @@ const app = {
         }
     },
 
-    async handleStudentLogin(e, pId = null, pName = null) {
+    async handleStudentLogin(e) {
         e.preventDefault();
         const btn = e.target.querySelector('button');
         if (btn) btn.classList.add('loading');
 
         try {
-            const studentId = pId !== null ? pId : document.getElementById('stu-id').value.trim();
-            const name = (pName !== null ? pName : document.getElementById('stu-name').value.trim()).toLowerCase();
+            const studentId = document.getElementById('stu-id').value.trim();
+            const name = document.getElementById('stu-name').value.trim().toLowerCase();
             const students = await db.students.toArray();
             const student = students.find(s => {
                 const sId = (s.studentId || s.studentid || "").toString().toLowerCase();
