@@ -1700,29 +1700,6 @@ tr:hover td {
     }
 }
 
-/* Portal Mode Override to hide standard app chrome */
-body.portal-mode {
-    background-image: none !important;
-    background: var(--bg-main) !important;
-}
-
-body.portal-mode .sidebar,
-body.portal-mode .top-bar,
-body.portal-mode #sidebar-overlay,
-body.portal-mode .bg-blobs {
-    display: none !important;
-}
-
-body.portal-mode .main-wrapper {
-    margin-left: 0 !important;
-}
-
-body.portal-mode .content-area {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: none !important;
-}
-
 /* =============================================
    PRINT
    ============================================= */

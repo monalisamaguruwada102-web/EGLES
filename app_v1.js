@@ -103,7 +103,6 @@ const app = {
     },
 
     showPublicPortal() {
-        document.body.classList.add('portal-mode');
         const sidebar = document.querySelector('.sidebar');
         const topbar = document.querySelector('.top-bar');
         if (sidebar) sidebar.style.display = 'none';
@@ -114,7 +113,7 @@ const app = {
         this.container.classList.add('page-content-fade');
         
         this.container.innerHTML = `
-            <div id="public-portal" style="min-height:100vh; background: var(--bg-main); width: 100%;">
+            <div id="public-portal" style="min-height:100vh; background: var(--bg-main); width:100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 
                 <!-- Live News Ticker -->
                 <div class="stats-ticker">
@@ -627,7 +626,6 @@ const app = {
     },
 
     async renderStudentPortal() {
-        document.body.classList.add('portal-mode');
         const student = await db.students.get(this.currentUser.id);
         if (!student) return alert("Student profile error.");
 
@@ -651,7 +649,7 @@ const app = {
         const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
         this.container.innerHTML = `
-            <div id="student-portal" style="min-height: 100vh; background: var(--bg-main); width: 100%;">
+            <div id="student-portal" style="min-height: 100vh; background: var(--bg-main); width: 100vw; margin-left: calc(-1 * (100vw - 100%) / 2);">
                 <div style="max-width:1400px; margin:0 auto; padding:3rem 1rem;">
                     
                     <!-- PREMIUM IDENTITY HEADER -->
@@ -1235,7 +1233,6 @@ const app = {
     },
 
     async navigate(page) {
-        document.body.classList.remove('portal-mode');
         if (!this.checkPermission(page)) {
             this.navigate('dashboard');
             return;
